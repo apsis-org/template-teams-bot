@@ -2,12 +2,8 @@
   "name": "template-teams-bot",
   "version": "1.0.0",
   "description": "Microsoft Teams Bot template using Azure Functions and Bot Framework SDK",
-  "main": "dist/index.cjs",
   "type": "module",
-  "engines": {
-    "node": "24"
-  },
-  "packageManager": "pnpm@9.15.0",
+  "main": "dist/index.cjs",
   "scripts": {
     "build": "vp pack",
     "watch": "vp pack --watch",
@@ -17,6 +13,7 @@
     "fmt": "vp fmt",
     "test": "vp test run",
     "test:watch": "vp test",
+    "typecheck": "tsc --noEmit",
     "prepare": "git config core.hooksPath .githooks"
   },
   "dependencies": {
@@ -30,6 +27,10 @@
     "vite-plus": "catalog:",
     "vitest": "catalog:"
   },
+  "engines": {
+    "node": "24"
+  },
+  "packageManager": "pnpm@9.15.0",
   "pnpm": {
     "overrides": {
       "axios": "^1.20.0",
