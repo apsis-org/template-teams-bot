@@ -1,10 +1,4 @@
-import {
-  ActivityHandler,
-  MessageFactory,
-  TurnContext,
-  TeamsActivityHandler,
-  CardFactory,
-} from "botbuilder";
+import { MessageFactory, TurnContext, TeamsActivityHandler, CardFactory } from "botbuilder";
 
 /**
  * TeamsBot - Microsoft Teams Bot のメインクラス
@@ -21,8 +15,8 @@ export class TeamsBot extends TeamsActivityHandler {
       if (context.activity.conversation.conversationType === "personal") {
         await context.sendActivity(
           MessageFactory.text(
-            "このBotは個人チャットではご利用いただけません。チームのチャネルまたはグループチャットに追加してご利用ください。"
-          )
+            "このBotは個人チャットではご利用いただけません。チームのチャネルまたはグループチャットに追加してご利用ください。",
+          ),
         );
         await next();
         return;
@@ -36,7 +30,7 @@ export class TeamsBot extends TeamsActivityHandler {
         await this.sendHelpCard(context);
       } else if (text.toLowerCase() === "hello" || text === "こんにちは") {
         await context.sendActivity(
-          MessageFactory.text(`こんにちは、${context.activity.from.name} さん！`)
+          MessageFactory.text(`こんにちは、${context.activity.from.name} さん！`),
         );
       } else {
         // デフォルト応答: エコーバック
@@ -61,8 +55,8 @@ export class TeamsBot extends TeamsActivityHandler {
             const name = member.name ?? "ゲスト";
             await context.sendActivity(
               MessageFactory.text(
-                `ようこそ、${name} さん！\n\n「help」または「ヘルプ」と入力すると使い方を確認できます。`
-              )
+                `ようこそ、${name} さん！\n\n「help」または「ヘルプ」と入力すると使い方を確認できます。`,
+              ),
             );
           } catch (error) {
             console.warn("Failed to send welcome message:", (error as Error).message);

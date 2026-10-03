@@ -29,17 +29,20 @@ GitHub Actions から Azure へデプロイするためのサービスプリン�
 Azure Portal（サブスクリプションの Owner 権限が必要）で以下を行ってください：
 
 **① サービスプリンシパルの作成**
+
 1. Microsoft Entra ID → アプリの登録 → 新規登録
 2. 名前: `sp-github-actions`、登録
 3. 証明書とシークレット → 新しいクライアントシークレット → 追加
 4. 表示された**値**をメモ（一度しか表示されません）
 
 **② ロールの割り当て**
+
 1. サブスクリプション → アクセス制御 (IAM) → ロール割り当ての追加
 2. ロール: **共同作成者**、メンバー: `sp-github-actions` を選択
 3. 保存
 
 **③ 組織共通 Key Vault の作成**
+
 1. リソースグループ `rg-shared` を作成
 2. Key Vault を作成（例: `kv-<組織名>-gh-actions`）、リージョン: `Japan East`、アクセス許可モデル: Azure RBAC
 3. シークレットを登録：
@@ -59,12 +62,12 @@ shared_key_vault_name = "kv-<組織名>-gh-actions"
 
 stg / prod の各環境ディレクトリで `terraform plan` / `terraform apply` を実行すると、以下のリソースが **環境ごとに独立して** 作成されます。
 
-| リソース | stg | prod |
-|----------|-----|------|
-| Resource Group | `rg-<project>-stg` | `rg-<project>-prod` |
-| Function App | `func-<project>-stg` | `func-<project>-prod` |
-| Bot Service | `bot-<project>-stg` | `bot-<project>-prod` |
-| Key Vault | `kv-<project>-stg` | `kv-<project>-prod` |
+| リソース         | stg                     | prod                     |
+| ---------------- | ----------------------- | ------------------------ |
+| Resource Group   | `rg-<project>-stg`      | `rg-<project>-prod`      |
+| Function App     | `func-<project>-stg`    | `func-<project>-prod`    |
+| Bot Service      | `bot-<project>-stg`     | `bot-<project>-prod`     |
+| Key Vault        | `kv-<project>-stg`      | `kv-<project>-prod`      |
 | App Registration | `app-<project>-stg-bot` | `app-<project>-prod-bot` |
 
 ボットの認証情報（`MicrosoftAppId` / `MicrosoftAppPassword`）はメッセージングエンドポイントと1対1で紐づくため、環境・プロジェクトごとに別々の認証情報が必要です。
@@ -72,15 +75,15 @@ stg / prod の各環境ディレクトリで `terraform plan` / `terraform apply
 
 ### 料金目安
 
-| リソース | プラン | 料金 |
-|----------|--------|------|
-| Function App | Flex Consumption (FC1) | 月25万回実行 + 100,000 GB-s まで無料 |
-| Bot Service | F0 | 無料 |
-| Storage Account | Standard LRS | 数円〜数十円/月 |
-| Key Vault | Standard | 1万操作あたり約4円（ほぼ発生しない） |
-| Application Insights | — | 5GB/月まで無料 |
-| Log Analytics | — | 5GB/月まで無料 |
-| Azure AD App Registration | — | 無料 |
+| リソース                  | プラン                 | 料金                                 |
+| ------------------------- | ---------------------- | ------------------------------------ |
+| Function App              | Flex Consumption (FC1) | 月25万回実行 + 100,000 GB-s まで無料 |
+| Bot Service               | F0                     | 無料                                 |
+| Storage Account           | Standard LRS           | 数円〜数十円/月                      |
+| Key Vault                 | Standard               | 1万操作あたり約4円（ほぼ発生しない） |
+| Application Insights      | —                      | 5GB/月まで無料                       |
+| Log Analytics             | —                      | 5GB/月まで無料                       |
+| Azure AD App Registration | —                      | 無料                                 |
 
 社内ボット程度の利用量であれば、月額はほぼ0円（Storage の数円程度）です。
 
@@ -105,6 +108,7 @@ cp infra/envs/terraform.tfvars.example infra/envs/terraform.tfvars
 > ⚠️ **注意**: デフォルト値の `myteamsbot` のまま `terraform apply` するとリソース名に固定され、後からの変更は容易ではありません（Key Vault は削除後 soft-delete 期間中は同名再作成不可、Storage Account 名はグローバルに一意、など）。最初に必ず変更してください。
 
 `project_name` の制約:
+
 - 小文字英数字とハイフンのみ、3〜20 文字
 - Azure リソース名のプレフィックス（`rg-<project_name>-<env>` 等）に使用される
 - 例: `banking-info-bot`, `payroll-bot`
@@ -136,12 +140,12 @@ make setup-secrets
 
 Key Vault から認証情報を自動取得して以下を GitHub に登録します（Variables は GitHub Environment `stg` に紐づきます）。
 
-| 種別 | 名前 | 内容 |
-|------|------|------|
-| Secret | `AZURE_CREDENTIALS` | サービスプリンシパルの認証情報（リポジトリ共通） |
-| Variable | `AZURE_FUNCTION_APP_NAME` | Function App 名（例: `func-sample-bot-stg`） |
-| Variable | `AZURE_RESOURCE_GROUP` | リソースグループ名（例: `rg-sample-bot-stg`） |
-| Variable | `MICROSOFT_APP_ID` | Bot 認証用 App ID（Teams アプリパッケージのビルドで使用） |
+| 種別     | 名前                      | 内容                                                      |
+| -------- | ------------------------- | --------------------------------------------------------- |
+| Secret   | `AZURE_CREDENTIALS`       | サービスプリンシパルの認証情報（リポジトリ共通）          |
+| Variable | `AZURE_FUNCTION_APP_NAME` | Function App 名（例: `func-sample-bot-stg`）              |
+| Variable | `AZURE_RESOURCE_GROUP`    | リソースグループ名（例: `rg-sample-bot-stg`）             |
+| Variable | `MICROSOFT_APP_ID`        | Bot 認証用 App ID（Teams アプリパッケージのビルドで使用） |
 
 ## stg での動作確認
 

@@ -23,7 +23,7 @@ adapter.onTurnError = async (context: TurnContext, error: Error) => {
     "OnTurnError Trace",
     `${error}`,
     "https://www.botframework.com/schemas/error",
-    "TurnError"
+    "TurnError",
   );
 
   await context.sendActivity("エラーが発生しました。しばらくしてから再試行してください。");
