@@ -4,14 +4,14 @@ TypeScript + Azure Functions + Terraform で構築する Microsoft Teams Bot テ
 
 ## ツールスタック
 
-| ツール                        | 役割                                                     |
-| ----------------------------- | -------------------------------------------------------- |
-| [Vite+](https://viteplus.dev) | ビルド・lint・format・test の統合ツールチェーン（alpha） |
-| tsdown / Rolldown             | バンドラー（Vite+ 経由）                                 |
-| Oxlint                        | Linter（Vite+ 経由）                                     |
-| Oxfmt                         | フォーマッター（Vite+ 経由）                             |
-| Vitest                        | テスト（Vite+ 経由）                                     |
-| Terraform                     | Azure インフラ管理                                       |
+| ツール                        | 役割                                            |
+| ----------------------------- | ----------------------------------------------- |
+| [Vite+](https://viteplus.dev) | ビルド・lint・format・test の統合ツールチェーン |
+| tsdown / Rolldown             | バンドラー（Vite+ 経由）                        |
+| Oxlint                        | Linter（Vite+ 経由）                            |
+| Oxfmt                         | フォーマッター（Vite+ 経由）                    |
+| Vitest                        | テスト（Vite+ 経由）                            |
+| Terraform                     | Azure インフラ管理                              |
 
 ## アーキテクチャ
 
@@ -158,6 +158,19 @@ make setup-manifest
 
 `appPackage/manifest.json` を用途に合わせて編集してください（会社情報、コマンド一覧など）。
 
+#### manifest.json のバージョン自動更新
+
+`manifest.json` を含むコミットをすると、git フック（`.githooks/commit-msg`）が `version`（Teams アプリのバージョン）を自動で上げます。フックは `pnpm install` 時に `prepare` スクリプトで有効になります。
+
+| コミットメッセージ                                                 | 上がる位置 | 例            |
+| ------------------------------------------------------------------ | ---------- | ------------- |
+| `feat!:` / `fix(scope)!:` など `!` 付き、本文に `BREAKING CHANGE:` | メジャー   | 1.0.0 → 2.0.0 |
+| `feat:` / `feat(scope):`                                           | マイナー   | 1.0.0 → 1.1.0 |
+| それ以外                                                           | パッチ     | 1.0.0 → 1.0.1 |
+
+- `manifest.json` を含まないコミットでは何もしません
+- `version` を手で書き換えてコミットした場合は、その値を優先して自動更新しません
+
 ## インフラ構築（初回のみ）
 
 Azure リソースの作成は、テンプレートから新しいプロジェクトを作成した際に **1回だけ** 実行します。
@@ -263,6 +276,7 @@ ZIP 内に `manifest.json` が存在しないか、ファイル名が異なっ�
 
 - バージョンは [Conventional Commits](https://www.conventionalcommits.org/ja/v1.0.0/) から決まります（`feat` → minor、`fix` → patch、`feat!` / `BREAKING CHANGE` → major）
 - テンプレートから作成したリポジトリには、以降の更新は自動で反映されません。必要な変更は CHANGELOG を見て各自で取り込んでください
+- テンプレート本体のバージョン（タグ・`package.json`）と、Teams アプリのバージョン（`appPackage/manifest.json` の `version`。[git フックで自動更新](#manifestjson-のバージョン自動更新)）は別物です
 
 ### テンプレートから作成したリポジトリでの扱い
 

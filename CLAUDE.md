@@ -130,6 +130,7 @@ Teams はボットのテキストを **Markdown として解釈**するため、
 - テンプレート本体のバージョンは release-please で管理する（`release-please-config.json` / `.release-please-manifest.json`）
 - `package.json` の `version` と `CHANGELOG.md` は release-please が更新するため、手で編集しない
 - コミットメッセージは Conventional Commits に従う。破壊的変更は `feat!:` / `fix!:` または本文の `BREAKING CHANGE:` で示す（`BREAKING:` という type は release-please に認識されない）
+- `appPackage/manifest.json` の `version` は Teams アプリのバージョンで、テンプレート本体のバージョンとは別物。`manifest.json` を含むコミット時に `.githooks/commit-msg` がコミットメッセージから判定して自動で上げる（`!` 付き / `BREAKING CHANGE:` → major、`feat` → minor、それ以外 → patch）。フックは `pnpm install` の `prepare` で `core.hooksPath` に設定される
 
 ## 環境変数
 
