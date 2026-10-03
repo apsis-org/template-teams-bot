@@ -1,8 +1,10 @@
 #!/bin/sh
 # manifest.json がステージされている場合、コミットメッセージの prefix に応じてバージョンを自動インクリメントする。
-# major: / BREAKING:  → メジャー (1.0.0 → 2.0.0)
-# feat: / feature:    → マイナー (1.0.0 → 1.1.0)
-# それ以外            → パッチ  (1.0.0 → 1.0.1)
+# Conventional Commits に準拠して判定する（type の判定はメッセージ1行目のみ）。
+# feat!: / fix(scope)!: など ! 付き、本文の BREAKING CHANGE:、major: / BREAKING: → メジャー (1.0.0 → 2.0.0)
+# feat: / feat(scope): / feature:                                            → マイナー (1.0.0 → 1.1.0)
+# それ以外                                                                    → パッチ  (1.0.0 → 1.0.1)
+# この version は Teams アプリのバージョン。テンプレート本体のバージョン（release-please 管理）とは別物。
 # ただし、ステージされたバージョンが HEAD と異なる場合（手動更新済み）はスキップする。
 
 MANIFEST="appPackage/manifest.json"
@@ -35,9 +37,12 @@ fi
 
 CURRENT="${STAGED_VERSION}"
 
-if echo "$MSG" | grep -qiE "^(BREAKING|major):"; then
+SUBJECT=$(printf '%s\n' "$MSG" | head -n 1)
+
+if printf '%s\n' "$SUBJECT" | grep -qiE "^((BREAKING|major)|[a-z]+(\([^)]*\))?!):" \
+  || printf '%s\n' "$MSG" | grep -qE "^BREAKING[ -]CHANGE:"; then
   BUMP="major"
-elif echo "$MSG" | grep -qiE "^(feat|feature):"; then
+elif printf '%s\n' "$SUBJECT" | grep -qiE "^(feat|feature)(\([^)]*\))?:"; then
   BUMP="minor"
 else
   BUMP="patch"
