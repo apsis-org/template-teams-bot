@@ -1,0 +1,51 @@
+{
+  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.25/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.25",
+  "version": "1.0.0",
+  "id": "__TEAMS_APP_ID__",
+  "developer": {
+    "name": "Your Company",
+    "websiteUrl": "https://example.com",
+    "privacyUrl": "https://example.com/privacy-policy/",
+    "termsOfUseUrl": "https://example.com/terms-of-service/"
+  },
+  "icons": {
+    "color": "color.png",
+    "outline": "outline.png"
+  },
+  "name": {
+    "short": "Teams Bot__ENV_SUFFIX__",
+    "full": "Teams Bot Template__ENV_SUFFIX__"
+  },
+  "description": {
+    "short": "Teams Bot テンプレート（チーム/グループチャット向け）",
+    "full": "Azure Functions 上で動作する Microsoft Teams Bot テンプレートです。チームのチャネルまたはグループチャットに追加してご利用ください（個人チャットには対応していません）。"
+  },
+  "accentColor": "#FFFFFF",
+  "bots": [
+    {
+      "botId": "__BOT_ID__",
+      "scopes": ["team", "groupChat"],
+      "supportsFiles": false,
+      "isNotificationOnly": false,
+      "commandLists": [
+        {
+          "scopes": ["team", "groupChat"],
+          "commands": [
+            {
+              "title": "help",
+              "description": "ヘルプを表示します"
+            },
+            {
+              "title": "hello",
+              "description": "挨拶します"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "supportsChannelFeatures": "tier1",
+  "permissions": ["identity", "messageTeamMembers"],
+  "validDomains": []
+}

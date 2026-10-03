@@ -1,0 +1,53 @@
+name: Build Teams App Package
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "対象環境"
+        required: true
+        default: "stg"
+        type: choice
+        options:
+          - stg
+          - prod
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build Teams App Package (${{ inputs.environment }})
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Build Teams App Package
+        run: |
+          ENV="${{ inputs.environment }}"
+          BOT_ID="${{ vars.MICROSOFT_APP_ID }}"
+          TEAMS_APP_ID="$(uuidgen | tr '[:upper:]' '[:lower:]')"
+          ENV_SUFFIX="$([[ "$ENV" == "prod" ]] && echo "" || echo " [${ENV}]")"
+
+          OUTDIR="$RUNNER_TEMP/teams-app"
+          mkdir -p "$OUTDIR"
+          cp appPackage/manifest.json appPackage/color.png appPackage/outline.png "$OUTDIR/"
+
+          sed -i \
+            -e "s/__BOT_ID__/$BOT_ID/g" \
+            -e "s/__TEAMS_APP_ID__/$TEAMS_APP_ID/g" \
+            -e "s/__ENV_SUFFIX__/$ENV_SUFFIX/g" \
+            "$OUTDIR/manifest.json"
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: teams-app-${{ inputs.environment }}-${{ github.run_number }}
+          path: ${{ runner.temp }}/teams-app/*
+          retention-days: 90

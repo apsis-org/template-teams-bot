@@ -1,0 +1,63 @@
+#!/bin/sh
+# manifest.json がステージされている場合、コミットメッセージの prefix に応じてバージョンを自動インクリメントする。
+# major: / BREAKING:  → メジャー (1.0.0 → 2.0.0)
+# feat: / feature:    → マイナー (1.0.0 → 1.1.0)
+# それ以外            → パッチ  (1.0.0 → 1.0.1)
+# ただし、ステージされたバージョンが HEAD と異なる場合（手動更新済み）はスキップする。
+
+MANIFEST="appPackage/manifest.json"
+
+if ! git diff --cached --name-only | grep -q "^${MANIFEST}$"; then
+  exit 0
+fi
+
+MSG=$(cat "$1")
+
+# HEAD のバージョンを取得（初回コミット時は空）
+HEAD_VERSION=$(git show HEAD:"${MANIFEST}" 2>/dev/null | node -e "
+  let d=''; process.stdin.on('data',c=>d+=c).on('end',()=>{
+    try { process.stdout.write(JSON.parse(d).version); } catch { process.stdout.write(''); }
+  });
+")
+
+# ステージされたバージョンを取得
+STAGED_VERSION=$(git show :"${MANIFEST}" | node -e "
+  let d=''; process.stdin.on('data',c=>d+=c).on('end',()=>{
+    process.stdout.write(JSON.parse(d).version);
+  });
+")
+
+# 手動でバージョンが変更済みならスキップ
+if [ -n "${HEAD_VERSION}" ] && [ "${STAGED_VERSION}" != "${HEAD_VERSION}" ]; then
+  echo "manifest.json version: ${STAGED_VERSION} (手動設定のため自動インクリメントをスキップ)"
+  exit 0
+fi
+
+CURRENT="${STAGED_VERSION}"
+
+if echo "$MSG" | grep -qiE "^(BREAKING|major):"; then
+  BUMP="major"
+elif echo "$MSG" | grep -qiE "^(feat|feature):"; then
+  BUMP="minor"
+else
+  BUMP="patch"
+fi
+
+NEW_VERSION=$(node -e "
+const v = '${CURRENT}'.split('.').map(Number);
+if ('${BUMP}' === 'major') { v[0]++; v[1] = 0; v[2] = 0; }
+else if ('${BUMP}' === 'minor') { v[1]++; v[2] = 0; }
+else { v[2]++; }
+process.stdout.write(v.join('.'));
+")
+
+node -e "
+const fs = require('fs');
+const m = JSON.parse(fs.readFileSync('${MANIFEST}', 'utf8'));
+m.version = '${NEW_VERSION}';
+fs.writeFileSync('${MANIFEST}', JSON.stringify(m, null, 2) + '\n');
+"
+
+git add "${MANIFEST}"
+
+echo "manifest.json version: ${CURRENT} → ${NEW_VERSION} (${BUMP})"

@@ -1,0 +1,110 @@
+name: Deploy to Azure Functions
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "デプロイ先の環境"
+        required: true
+        default: "stg"
+        type: choice
+        options:
+          - stg
+          - prod
+      deploy_teams_app:
+        description: "Teams アプリも更新する（manifest.json を変更した場合）"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v5
+        with:
+          run_install: false
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
+      - name: Cache pnpm store
+        uses: actions/cache@v5
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm run build
+
+      - name: Run tests
+        run: pnpm test
+
+      - name: Create deployment package
+        run: |
+          mkdir -p deploy
+          cp -r dist deploy/
+          cp host.json deploy/
+          cp package.json deploy/
+          cd deploy && npm install --omit=dev
+          zip -r ../deploy.zip .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: deploy-package
+          path: deploy.zip
+          retention-days: 1
+
+  deploy:
+    name: Deploy to ${{ inputs.environment }}
+    needs: build
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v6
+
+
+      - name: Download artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: deploy-package
+
+      - name: Azure Login
+        uses: azure/login@v3
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy to Azure Functions
+        run: |
+          az functionapp deployment source config-zip \
+            --resource-group ${{ vars.AZURE_RESOURCE_GROUP }} \
+            --name ${{ vars.AZURE_FUNCTION_APP_NAME }} \
+            --src deploy.zip \
+            --build-remote false
+
+  build-teams-app:
+    name: Build Teams App Package
+    needs: deploy
+    if: inputs.deploy_teams_app == true
+    uses: ./.github/workflows/build-teams-app.yml
+    with:
+      environment: ${{ inputs.environment }}
+    secrets: inherit
