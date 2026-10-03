@@ -97,6 +97,7 @@ Teams はボットのテキストを **Markdown として解釈**するため、
 - `pack.format` は `"cjs"` を維持する（`botbuilder` が CommonJS のため、ESM でバンドルすると Azure Functions ランタイム上で named import が失敗する）
 - `"type": "module"` のパッケージで CJS を出力するため、拡張子は `.cjs` になる
 - `package.json` の `main`（`dist/index.cjs`）とビルド出力を一致させること
+- TypeScript 7.0 はプログラム用 API を提供しないため、`pack.dts`（型定義ファイル生成）を有効にするとビルドが失敗する。本プロジェクトは型定義ファイル不要のため使わないこと（TypeScript 7.1 で API 復活予定）
 
 ### Azure Functions
 
