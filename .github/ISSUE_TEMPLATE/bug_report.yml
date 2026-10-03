@@ -1,0 +1,42 @@
+name: バグ報告
+description: テンプレートの不具合を報告する
+labels: ["bug"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: 概要
+      description: 何が起きたかを簡潔に書いてください。
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 再現手順
+      placeholder: |
+        1. テンプレートからリポジトリを作成
+        2. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期待する動作
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: テンプレートのバージョン
+      description: "作成元のリリース（例: v0.1.0）またはコミット SHA"
+  - type: textarea
+    id: environment
+    attributes:
+      label: 環境
+      description: Node.js / pnpm / Terraform / Azure Functions Core Tools のバージョンなど
+  - type: textarea
+    id: logs
+    attributes:
+      label: ログ・エラーメッセージ
+      description: 認証情報やテナント ID などの機密情報は必ず伏せてください。
+      render: shell
