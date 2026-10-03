@@ -21,6 +21,40 @@ infra/
   main.tf                         ← 共通モジュール（直接実行しない）
 ```
 
+## 事前準備: 組織共通のセットアップ（組織で1回のみ）
+
+GitHub Actions から Azure へデプロイするためのサービスプリンシパルと、その認証情報を保管する組織共通の Key Vault を用意します。
+**組織で1回だけ**行う作業で、このテンプレートから2つ目以降のボットを作る場合は不要です（④の Key Vault 名だけ確認してください）。
+
+Azure Portal（サブスクリプションの Owner 権限が必要）で以下を行ってください：
+
+**① サービスプリンシパルの作成**
+1. Microsoft Entra ID → アプリの登録 → 新規登録
+2. 名前: `sp-github-actions`、登録
+3. 証明書とシークレット → 新しいクライアントシークレット → 追加
+4. 表示された**値**をメモ（一度しか表示されません）
+
+**② ロールの割り当て**
+1. サブスクリプション → アクセス制御 (IAM) → ロール割り当ての追加
+2. ロール: **共同作成者**、メンバー: `sp-github-actions` を選択
+3. 保存
+
+**③ 組織共通 Key Vault の作成**
+1. リソースグループ `rg-shared` を作成
+2. Key Vault を作成（例: `kv-<組織名>-gh-actions`）、リージョン: `Japan East`、アクセス許可モデル: Azure RBAC
+3. シークレットを登録：
+   - `sp-github-actions-client-id`：クライアント ID
+   - `sp-github-actions-client-secret`：クライアントシークレット
+4. 開発者全員に **キー コンテナー シークレット責任者** ロールを付与
+
+**④ Key Vault 名を控える**
+
+③で作成した Key Vault 名は、後述の「2. project_name の設定」で `infra/envs/terraform.tfvars` の `shared_key_vault_name` に設定します。
+
+```hcl
+shared_key_vault_name = "kv-<組織名>-gh-actions"
+```
+
 ## Terraform によるインフラ構築
 
 stg / prod の各環境ディレクトリで `terraform plan` / `terraform apply` を実行すると、以下のリソースが **環境ごとに独立して** 作成されます。
@@ -62,7 +96,11 @@ az login
 cp infra/envs/terraform.tfvars.example infra/envs/terraform.tfvars
 ```
 
-`infra/envs/terraform.tfvars` を開き、**必ず `project_name` をプロジェクト固有の値に書き換えてください**（stg / prod 共通で使用されます）。
+`infra/envs/terraform.tfvars` を開き、以下を設定してください（stg / prod 共通で使用されます）。
+
+- `project_name`: **必ずプロジェクト固有の値に書き換える**
+- `subscription_id`: デプロイ先の Azure サブスクリプション ID
+- `shared_key_vault_name`: [事前準備](#事前準備-組織共通のセットアップ組織で1回のみ)で作成した組織共通 Key Vault 名
 
 > ⚠️ **注意**: デフォルト値の `myteamsbot` のまま `terraform apply` するとリソース名に固定され、後からの変更は容易ではありません（Key Vault は削除後 soft-delete 期間中は同名再作成不可、Storage Account 名はグローバルに一意、など）。最初に必ず変更してください。
 
@@ -170,33 +208,4 @@ Key Vault から取得した値で `local.settings.json` の `MicrosoftAppId` / 
 
 ```bash
 make generate-local-settings
-```
-
-## 組織初回セットアップ（既に設定済み）
-
-Azure Portal（Owner 権限が必要）で以下を行ってください：
-
-**① サービスプリンシパルの作成**
-1. Microsoft Entra ID → アプリの登録 → 新規登録
-2. 名前: `sp-github-actions`、登録
-3. 証明書とシークレット → 新しいクライアントシークレット → 追加
-4. 表示された**値**をメモ（一度しか表示されません）
-
-**② ロールの割り当て**
-1. サブスクリプション → アクセス制御 (IAM) → ロール割り当ての追加
-2. ロール: **共同作成者**、メンバー: `sp-github-actions` を選択
-3. 保存
-
-**③ 組織共通 Key Vault の作成**
-1. リソースグループ `rg-shared` を作成
-2. Key Vault を作成（例: `kv-<組織名>-gh-actions`）、リージョン: `Japan East`、アクセス許可モデル: Azure RBAC
-3. シークレットを登録：
-   - `sp-github-actions-client-id`：クライアント ID
-   - `sp-github-actions-client-secret`：クライアントシークレット
-4. 開発者全員に **キー コンテナー シークレット責任者** ロールを付与
-
-**④ `terraform.tfvars` に Key Vault 名を設定**
-
-```hcl
-shared_key_vault_name = "kv-<組織名>-gh-actions"
 ```
