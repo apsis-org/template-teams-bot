@@ -27,7 +27,10 @@ export default defineConfig({
   },
 
   // Oxfmt によるフォーマット設定
-  fmt: {},
+  fmt: {
+    // release-please が自動生成するため整形対象外にする（整形すると次回の生成で差分が出続ける）
+    ignorePatterns: ["CHANGELOG.md"],
+  },
 
   // Vitest によるテスト設定
   test: {
