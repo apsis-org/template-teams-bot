@@ -1,6 +1,6 @@
 {
   "name": "template-teams-bot",
-  "version": "1.0.0",
+  "version": "0.0.2",
   "description": "Microsoft Teams Bot template using Azure Functions and Bot Framework SDK",
   "type": "module",
   "main": "dist/index.cjs",
