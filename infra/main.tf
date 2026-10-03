@@ -66,11 +66,11 @@ module "monitoring" {
 module "function_app" {
   source = "./modules/function_app"
 
-  resource_group_name        = azurerm_resource_group.main.name
-  location                   = azurerm_resource_group.main.location
-  prefix                     = local.prefix
-  tags                       = local.common_tags
-  application_insights_key   = module.monitoring.instrumentation_key
+  resource_group_name                    = azurerm_resource_group.main.name
+  location                               = azurerm_resource_group.main.location
+  prefix                                 = local.prefix
+  tags                                   = local.common_tags
+  application_insights_key               = module.monitoring.instrumentation_key
   application_insights_connection_string = module.monitoring.connection_string
 
   app_settings = {
@@ -98,13 +98,13 @@ module "key_vault" {
 module "bot_service" {
   source = "./modules/bot_service"
 
-  resource_group_name    = azurerm_resource_group.main.name
-  location               = azurerm_resource_group.main.location
-  prefix                 = local.prefix
-  tags                   = local.common_tags
-  display_name           = local.bot_display_name
-  microsoft_app_id       = azuread_application.bot.client_id
-  microsoft_app_type     = var.microsoft_app_type
+  resource_group_name     = azurerm_resource_group.main.name
+  location                = azurerm_resource_group.main.location
+  prefix                  = local.prefix
+  tags                    = local.common_tags
+  display_name            = local.bot_display_name
+  microsoft_app_id        = azuread_application.bot.client_id
+  microsoft_app_type      = var.microsoft_app_type
   microsoft_app_tenant_id = data.azuread_client_config.current.tenant_id
-  endpoint               = "https://${module.function_app.default_hostname}/api/messages"
+  endpoint                = "https://${module.function_app.default_hostname}/api/messages"
 }
