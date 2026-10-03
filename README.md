@@ -4,14 +4,14 @@ TypeScript + Azure Functions + Terraform で構築する Microsoft Teams Bot テ
 
 ## ツールスタック
 
-| ツール | 役割 |
-|--------|------|
+| ツール                        | 役割                                                     |
+| ----------------------------- | -------------------------------------------------------- |
 | [Vite+](https://viteplus.dev) | ビルド・lint・format・test の統合ツールチェーン（alpha） |
-| tsdown / Rolldown | バンドラー（Vite+ 経由） |
-| Oxlint | Linter（Vite+ 経由） |
-| Oxfmt | フォーマッター（Vite+ 経由） |
-| Vitest | テスト（Vite+ 経由） |
-| Terraform | Azure インフラ管理 |
+| tsdown / Rolldown             | バンドラー（Vite+ 経由）                                 |
+| Oxlint                        | Linter（Vite+ 経由）                                     |
+| Oxfmt                         | フォーマッター（Vite+ 経由）                             |
+| Vitest                        | テスト（Vite+ 経由）                                     |
+| Terraform                     | Azure インフラ管理                                       |
 
 ## アーキテクチャ
 
@@ -37,11 +37,11 @@ src/bot/adapter.ts         ← 認証・署名検証（CloudAdapter）
 src/bot/bot.ts             ← メッセージ処理（ボットロジック）
 ```
 
-| ファイル | 役割 | 編集 |
-|----------|------|------|
-| `src/bot/bot.ts` | メッセージ処理（ロジック本体） | **ここを編集** |
-| `src/bot/adapter.ts` | 認証・署名検証 | 触らない |
-| `src/functions/messages.ts` | HTTP エントリーポイント | 触らない |
+| ファイル                    | 役割                           | 編集           |
+| --------------------------- | ------------------------------ | -------------- |
+| `src/bot/bot.ts`            | メッセージ処理（ロジック本体） | **ここを編集** |
+| `src/bot/adapter.ts`        | 認証・署名検証                 | 触らない       |
+| `src/functions/messages.ts` | HTTP エントリーポイント        | 触らない       |
 
 Teams からのメッセージは種類（テキスト、メンバー追加など）に関係なく、すべて `POST /api/messages` に届きます。`TeamsActivityHandler` が `activity.type` を見て `onMessage` や `onMembersAdded` などのハンドラーに振り分け、テキストコマンドの分岐は `bot.ts` の `onMessage` 内で if/else で行います。
 
@@ -60,15 +60,15 @@ src/bot/
 
 ## Azureリソース構成
 
-| リソース | 説明 |
-|----------|------|
-| Azure Functions (Consumption) | Bot のメッセージ処理エンドポイント |
-| Azure Bot Service | Teams チャンネル登録・認証 |
-| Azure AD App Registration | Bot 認証用のアプリ登録 |
-| Application Insights | ログ・監視 |
-| Log Analytics Workspace | Application Insights のバックエンド |
-| Storage Account | Functions の実行基盤 |
-| Azure Key Vault | ボット認証情報の管理 |
+| リソース                           | 説明                                |
+| ---------------------------------- | ----------------------------------- |
+| Azure Functions (Flex Consumption) | Bot のメッセージ処理エンドポイント  |
+| Azure Bot Service                  | Teams チャンネル登録・認証          |
+| Azure AD App Registration          | Bot 認証用のアプリ登録              |
+| Application Insights               | ログ・監視                          |
+| Log Analytics Workspace            | Application Insights のバックエンド |
+| Storage Account                    | Functions の実行基盤                |
+| Azure Key Vault                    | ボット認証情報の管理                |
 
 ## 前提条件
 
@@ -141,6 +141,7 @@ pnpm run build        # バンドル（dist/ に出力）
 pnpm run watch        # ウォッチモード
 pnpm run lint         # Oxlint
 pnpm run fmt          # Oxfmt（フォーマット）
+pnpm run typecheck    # tsc --noEmit（型チェック）
 pnpm test             # Vitest（1回実行）
 pnpm run test:watch   # Vitest（ウォッチモード）
 ```
@@ -188,10 +189,10 @@ Teams アプリのカタログへの登録は手動で行います（Graph API �
 
 Teams アプリには2つの PNG アイコンが必要です。
 
-| アイコン | サイズ | 用途 |
-|----------|--------|------|
-| `color.png` | 192 x 192 px | ストア、フライアウト等 |
-| `outline.png` | 32 x 32 px | アプリバー等 |
+| アイコン      | サイズ       | 用途                   |
+| ------------- | ------------ | ---------------------- |
+| `color.png`   | 192 x 192 px | ストア、フライアウト等 |
+| `outline.png` | 32 x 32 px   | アプリバー等           |
 
 - ロゴは中央の 120 x 120 px セーフエリア内に収める
 - 角丸・ボーダーは Teams が自動付与するため、正方形のまま提出する
@@ -238,21 +239,21 @@ ZIP 内に `manifest.json` が存在しないか、ファイル名が異なっ�
 
 ボットはインストールされた場所にのみ反応します。利用可能なスコープはチーム（チャンネル）とグループチャットのみです。
 
-| 場所 | 反応条件 |
-|------|---------|
-| チャンネル | `@ボット名 hello` のようにメンションが必要 |
-| グループチャット | ボットをグループに追加後、メッセージで反応 |
-| 1対1チャット | 非対応（メッセージを送ると、チームまたはグループチャットで使うよう案内を返す） |
+| 場所             | 反応条件                                                                       |
+| ---------------- | ------------------------------------------------------------------------------ |
+| チャンネル       | `@ボット名 hello` のようにメンションが必要                                     |
+| グループチャット | ボットをグループに追加後、メッセージで反応                                     |
+| 1対1チャット     | 非対応（メッセージを送ると、チームまたはグループチャットで使うよう案内を返す） |
 
 個人チャット非対応は、`appPackage/manifest.json` の `scopes`（`personal` を含めない）と、`src/bot/bot.ts` での `conversationType === "personal"` 判定の二重で担保しています。
 
 ### デフォルトのコマンド
 
-| メッセージ | 応答 |
-|-----------|------|
-| `hello` / `こんにちは` | 「こんにちは、{送信者名} さん！」 |
-| `help` / `ヘルプ` | コマンド一覧のヘルプカード（Adaptive Card） |
-| それ以外 | 「受け取ったメッセージ: "{送信内容}"」とエコーバック |
+| メッセージ             | 応答                                                 |
+| ---------------------- | ---------------------------------------------------- |
+| `hello` / `こんにちは` | 「こんにちは、{送信者名} さん！」                    |
+| `help` / `ヘルプ`      | コマンド一覧のヘルプカード（Adaptive Card）          |
+| それ以外               | 「受け取ったメッセージ: "{送信内容}"」とエコーバック |
 
 英字コマンド（`hello` / `help`）は大文字・小文字を区別しません。
 

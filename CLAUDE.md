@@ -20,6 +20,7 @@ pnpm start              # ビルド後に Azure Functions Core Tools で起動
 # コード品質（Vite+ 統合）
 pnpm run lint           # Oxlint
 pnpm run fmt            # Oxfmt（フォーマット）
+pnpm run typecheck      # tsc --noEmit（型チェック）
 pnpm test               # Vitest（1回実行）
 pnpm run test:watch     # Vitest（ウォッチモード）
 
@@ -38,18 +39,18 @@ Teams クライアント → Azure Bot Service → Azure Functions → Bot ロ�
 
 ### 主要ファイル
 
-| ファイル | 役割 |
-|----------|------|
-| `src/functions/messages.ts` | Azure Functions HTTP トリガー（エントリーポイント） |
-| `src/bot/bot.ts` | `TeamsActivityHandler` を継承したボットロジック |
-| `src/bot/adapter.ts` | `CloudAdapter` の設定・エラーハンドリング |
-| `infra/main.tf` | Azure リソース定義（共通モジュール） |
-| `infra/envs/stg/` | stg 環境の Terraform root |
-| `infra/envs/prod/` | prod 環境の Terraform root |
-| `infra/modules/function_app/` | Function App / Storage / App Service Plan |
-| `infra/modules/bot_service/` | Azure Bot Service + Teams チャンネル |
-| `infra/modules/monitoring/` | Application Insights + Log Analytics |
-| `appPackage/manifest.json` | Teams アプリマニフェスト |
+| ファイル                      | 役割                                                |
+| ----------------------------- | --------------------------------------------------- |
+| `src/functions/messages.ts`   | Azure Functions HTTP トリガー（エントリーポイント） |
+| `src/bot/bot.ts`              | `TeamsActivityHandler` を継承したボットロジック     |
+| `src/bot/adapter.ts`          | `CloudAdapter` の設定・エラーハンドリング           |
+| `infra/main.tf`               | Azure リソース定義（共通モジュール）                |
+| `infra/envs/stg/`             | stg 環境の Terraform root                           |
+| `infra/envs/prod/`            | prod 環境の Terraform root                          |
+| `infra/modules/function_app/` | Function App / Storage / App Service Plan           |
+| `infra/modules/bot_service/`  | Azure Bot Service + Teams チャンネル                |
+| `infra/modules/monitoring/`   | Application Insights + Log Analytics                |
+| `appPackage/manifest.json`    | Teams アプリマニフェスト                            |
 
 ## 開発ガイドライン
 
@@ -92,9 +93,10 @@ Teams はボットのテキストを **Markdown として解釈**するため、
 
 ### ビルド設定
 
-- `vite.config.ts` の `pack.entry` はオブジェクト形式 `{ index: "src/functions/messages.ts" }` で `dist/index.js` を出力
-- `fixedExtension: false` を指定（`platform: "node"` のデフォルトは `true` で `.mjs` 出力になるため）
-- `package.json` の `main`（`dist/index.js`）とビルド出力を一致させること
+- `vite.config.ts` の `pack.entry` はオブジェクト形式 `{ index: "src/functions/messages.ts" }` で `dist/index.cjs` を出力
+- `pack.format` は `"cjs"` を維持する（`botbuilder` が CommonJS のため、ESM でバンドルすると Azure Functions ランタイム上で named import が失敗する）
+- `"type": "module"` のパッケージで CJS を出力するため、拡張子は `.cjs` になる
+- `package.json` の `main`（`dist/index.cjs`）とビルド出力を一致させること
 
 ### Azure Functions
 
@@ -124,12 +126,12 @@ Teams はボットのテキストを **Markdown として解釈**するため、
 
 ローカル開発は `local.settings.json`（`.gitignore` 済み）、本番は Function App の App Settings で管理。
 
-| 変数名 | 説明 |
-|--------|------|
-| `MicrosoftAppId` | Bot 認証用 App ID |
-| `MicrosoftAppPassword` | Bot 認証用シークレット |
-| `MicrosoftAppType` | `SingleTenant` / `UserAssignedMSI`（MultiTenant は廃止） |
-| `MicrosoftAppTenantId` | SingleTenant 時のテナント ID |
+| 変数名                 | 説明                                                     |
+| ---------------------- | -------------------------------------------------------- |
+| `MicrosoftAppId`       | Bot 認証用 App ID                                        |
+| `MicrosoftAppPassword` | Bot 認証用シークレット                                   |
+| `MicrosoftAppType`     | `SingleTenant` / `UserAssignedMSI`（MultiTenant は廃止） |
+| `MicrosoftAppTenantId` | SingleTenant 時のテナント ID                             |
 
 ## 注意事項
 
