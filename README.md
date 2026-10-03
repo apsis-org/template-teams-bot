@@ -72,7 +72,7 @@ src/bot/
 
 ## 前提条件
 
-- [Node.js 22](https://nodejs.org/)
+- [Node.js 24](https://nodejs.org/)
 - [pnpm 9+](https://pnpm.io/installation)
 - [Azure CLI](https://learn.microsoft.com/ja-jp/cli/azure/install-azure-cli)
 - [tfenv](https://github.com/tfutils/tfenv)（Terraform バージョン管理）
