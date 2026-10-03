@@ -121,6 +121,14 @@ Teams はボットのテキストを **Markdown として解釈**するため、
 - Azure 認証はサービスプリンシパル（`AZURE_CREDENTIALS`）を使用。Key Vault から自動取得
 - `deploy-functions.yml`: `workflow_dispatch` のみ。Function App へのデプロイと Teams アプリパッケージのビルドを選択実行
 - `build-teams-app.yml`: Teams アプリの ZIP パッケージを生成し Artifact として保存。Teams 管理センターへのアップロードは手動
+- `ci.yml`: PR と main への push で lint / format check / typecheck / test / build を実行
+- `release.yml`: release-please によるリリース PR の作成とリリース。`if: github.repository == 'apsis-org/template-teams-bot'` でテンプレート本体以外では実行しない（この条件は外さないこと）
+
+### バージョン管理
+
+- テンプレート本体のバージョンは release-please で管理する（`release-please-config.json` / `.release-please-manifest.json`）
+- `package.json` の `version` と `CHANGELOG.md` は release-please が更新するため、手で編集しない
+- コミットメッセージは Conventional Commits に従う。破壊的変更は `feat!:` / `fix!:` または本文の `BREAKING CHANGE:` で示す（`BREAKING:` という type は release-please に認識されない）
 
 ## 環境変数
 
