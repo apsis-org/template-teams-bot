@@ -50,3 +50,38 @@ jobs:
 
       - name: Build
         run: pnpm run build
+
+  terraform:
+    name: Terraform fmt / validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Read Terraform version
+        id: tf-version
+        run: echo "version=$(cat infra/.terraform-version)" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: ${{ steps.tf-version.outputs.version }}
+
+      # envs/{stg,prod}/terraform.tfvars は ../terraform.tfvars へのシンボリックリンク（実体は .gitignore 済み）。
+      # リンク切れのままだと fmt がエラーになるため、CI では example から実体を作成する
+      - name: Create terraform.tfvars from example
+        run: cp infra/envs/terraform.tfvars.example infra/envs/terraform.tfvars
+
+      - name: Terraform fmt
+        run: terraform fmt -check -recursive infra
+
+      - name: Terraform validate (stg)
+        working-directory: infra/envs/stg
+        run: |
+          terraform init -backend=false -input=false
+          terraform validate
+
+      - name: Terraform validate (prod)
+        working-directory: infra/envs/prod
+        run: |
+          terraform init -backend=false -input=false
+          terraform validate
