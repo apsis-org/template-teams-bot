@@ -48,7 +48,12 @@ resource "azuread_service_principal" "bot" {
 resource "azuread_application_password" "bot" {
   application_id = azuread_application.bot.id
   display_name   = "bot-secret"
-  end_date       = "2099-01-01T00:00:00Z"
+  # テンプレートの既定値として実質無期限にしている。
+  # 組織のシークレットローテーション方針がある場合は短い期限に変更し、
+  # 期限前に terraform apply で再生成する運用にすること。
+  # 再生成した値は Key Vault には自動反映されるが、Function App の app_settings は
+  # modules/function_app で ignore_changes にしているため、MicrosoftAppPassword の手動更新が必要。
+  end_date = "2099-01-01T00:00:00Z"
 }
 
 # -------------------------------------------------------------------
