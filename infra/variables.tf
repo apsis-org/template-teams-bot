@@ -1,49 +1,49 @@
 variable "project_name" {
-  description = "プロジェクト名（リソース名のプレフィックスに使用）"
+  description = "Project name (used as the prefix of resource names)"
   type        = string
 
   validation {
     condition     = can(regex("^[a-z0-9-]{3,20}$", var.project_name))
-    error_message = "project_name は小文字英数字とハイフンのみ使用可能で、3〜20文字にしてください。"
+    error_message = "project_name must consist of lowercase letters, digits, and hyphens only, and be 3 to 20 characters long."
   }
 }
 
 variable "environment" {
-  description = "環境名（stg / prod）"
+  description = "Environment name (stg / prod)"
   type        = string
   default     = "stg"
 
   validation {
     condition     = contains(["stg", "prod"], var.environment)
-    error_message = "environment は stg / prod のいずれかを指定してください。"
+    error_message = "environment must be either stg or prod."
   }
 }
 
 variable "location" {
-  description = "Azureリージョン"
+  description = "Azure region"
   type        = string
   default     = "japaneast"
 }
 
 variable "microsoft_app_type" {
-  description = "Bot アプリの認証タイプ（SingleTenant / UserAssignedMSI）"
+  description = "Authentication type of the bot app (SingleTenant / UserAssignedMSI)"
   type        = string
   default     = "SingleTenant"
 
   validation {
     condition     = contains(["SingleTenant", "UserAssignedMSI"], var.microsoft_app_type)
-    error_message = "microsoft_app_type は SingleTenant / UserAssignedMSI のいずれかを指定してください。"
+    error_message = "microsoft_app_type must be either SingleTenant or UserAssignedMSI."
   }
 }
 
 variable "tags" {
-  description = "全リソースに付与する共通タグ"
+  description = "Common tags applied to all resources"
   type        = map(string)
   default     = {}
 }
 
 variable "shared_key_vault_name" {
-  description = "組織共通 Key Vault 名（sp-github-actions の認証情報を保管）。make setup-secrets で参照するのみで、Terraform リソースの作成には使用しない。"
+  description = "Name of the organization-wide Key Vault holding the sp-github-actions credentials. Read by make setup-secrets only; not used to create Terraform resources."
   type        = string
   default     = ""
 }

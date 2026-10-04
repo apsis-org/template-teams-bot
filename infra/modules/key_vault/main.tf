@@ -11,7 +11,7 @@ resource "azurerm_key_vault" "main" {
   tags                       = var.tags
 }
 
-# Terraform 実行者にフルアクセスを付与
+# Full access for the Terraform runner
 resource "azurerm_key_vault_access_policy" "terraform" {
   key_vault_id = azurerm_key_vault.main.id
   tenant_id    = data.azurerm_client_config.current.tenant_id
@@ -20,7 +20,7 @@ resource "azurerm_key_vault_access_policy" "terraform" {
   secret_permissions = ["Get", "List", "Set", "Delete", "Purge", "Recover"]
 }
 
-# Function App のマネージド ID に読み取り権限を付与
+# Read access for the Function App's managed identity
 resource "azurerm_key_vault_access_policy" "readers" {
   count        = length(var.access_principal_ids)
   key_vault_id = azurerm_key_vault.main.id
@@ -30,7 +30,7 @@ resource "azurerm_key_vault_access_policy" "readers" {
   secret_permissions = ["Get", "List"]
 }
 
-# シークレットを Key Vault に格納
+# Store the secrets in Key Vault
 resource "azurerm_key_vault_secret" "secrets" {
   count        = length(var.secret_names)
   name         = var.secret_names[count.index]

@@ -1,10 +1,10 @@
 output "name" {
-  description = "Key Vault 名"
+  description = "Key Vault name"
   value       = azurerm_key_vault.main.name
 }
 
 output "id" {
-  description = "Key Vault リソース ID"
+  description = "Key Vault resource ID"
   value       = azurerm_key_vault.main.id
 }
 

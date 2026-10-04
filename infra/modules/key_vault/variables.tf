@@ -1,37 +1,37 @@
 variable "resource_group_name" {
-  description = "リソースグループ名"
+  description = "Resource group name"
   type        = string
 }
 
 variable "location" {
-  description = "Azure リージョン"
+  description = "Azure region"
   type        = string
 }
 
 variable "prefix" {
-  description = "リソース名のプレフィックス"
+  description = "Prefix for resource names"
   type        = string
 }
 
 variable "tags" {
-  description = "リソースに付与するタグ"
+  description = "Tags applied to the resources"
   type        = map(string)
   default     = {}
 }
 
 variable "secret_names" {
-  description = "Key Vault に格納するシークレットのキー名リスト"
+  description = "Names of the secrets to store in Key Vault"
   type        = list(string)
 }
 
 variable "secret_values" {
-  description = "Key Vault に格納するシークレットの値リスト（secret_names と同順）"
+  description = "Values of the secrets to store in Key Vault (same order as secret_names)"
   type        = list(string)
   sensitive   = true
 }
 
 variable "access_principal_ids" {
-  description = "シークレットの読み取り権限を付与するプリンシパル ID"
+  description = "Principal IDs granted read access to the secrets"
   type        = list(string)
   default     = []
 }

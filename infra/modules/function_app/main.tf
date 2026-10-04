@@ -7,8 +7,8 @@ resource "random_string" "storage_suffix" {
 }
 
 resource "azurerm_storage_account" "main" {
-  # Storage Account 名は 3-24 文字 / 小文字英数字のみ
-  # "st"(2) + prefix(ハイフン除去、最大 17 文字に truncate) + ランダム(5) = 最大 24 文字
+  # Storage Account names are 3-24 characters, lowercase alphanumeric only
+  # "st"(2) + prefix (hyphens removed, truncated to 17 chars) + random(5) = at most 24 chars
   name                     = "st${substr(replace(var.prefix, "-", ""), 0, 17)}${random_string.storage_suffix.result}"
   resource_group_name      = var.resource_group_name
   location                 = var.location
@@ -24,7 +24,7 @@ resource "azurerm_storage_account" "main" {
   }
 }
 
-# Flex Consumption のデプロイ用 Blob コンテナ
+# Blob container for Flex Consumption deployments
 resource "azurerm_storage_container" "deployment" {
   name               = "flex-deployment"
   storage_account_id = azurerm_storage_account.main.id
@@ -35,7 +35,7 @@ resource "azurerm_service_plan" "main" {
   resource_group_name = var.resource_group_name
   location            = var.location
   os_type             = "Linux"
-  sku_name            = "FC1" # Flex Consumption プラン
+  sku_name            = "FC1" # Flex Consumption plan
   tags                = var.tags
 }
 
@@ -72,11 +72,11 @@ resource "azurerm_function_app_flex_consumption" "main" {
     var.app_settings
   )
 
-  # app_settings はデプロイワークフロー（.github/workflows/deploy-functions.yml の
-  # "Apply runtime settings" ステップ）が .env.example に列挙されたキーを
-  # `az functionapp config appsettings set` で差分更新する運用のため、
-  # Terraform での drift 検出・上書きを無効化する。
-  # ここで指定した app_settings は初回 apply 時のみ反映され、以降は Terraform 管理外となる。
+  # app_settings are updated incrementally by the deployment workflow
+  # (the "Apply runtime settings" step in .github/workflows/deploy-functions.yml runs
+  # `az functionapp config appsettings set` for the keys listed in .env.example),
+  # so drift detection / overwriting by Terraform is disabled.
+  # The app_settings given here are applied on the first apply only and are unmanaged afterwards.
   lifecycle {
     ignore_changes = [app_settings]
   }
