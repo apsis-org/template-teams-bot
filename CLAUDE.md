@@ -143,6 +143,8 @@ Teams はボットのテキストを **Markdown として解釈**するため、
 | `MicrosoftAppType`     | `SingleTenant` / `UserAssignedMSI`（MultiTenant は廃止） |
 | `MicrosoftAppTenantId` | SingleTenant 時のテナント ID                             |
 
+ボット固有の実行時設定（外部 API キー等）を追加するときは、`.env.example` に `KEY=` を追記する。`scripts/setup-github-secrets.sh` と `deploy-functions.yml` の「Apply runtime settings」ステップは `.env.example` のキー一覧を読んで登録・反映するため、スクリプトやワークフローにキー名をハードコードしないこと。
+
 ## 注意事項
 
 - `local.settings.json` は絶対にコミットしない

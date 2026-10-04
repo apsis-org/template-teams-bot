@@ -99,6 +99,35 @@ jobs:
             --src deploy.zip \
             --build-remote false
 
+      # .env.example に列挙されたキーに対応する GitHub Environment Secret を
+      # Function App の App Settings に反映する（make setup-secrets で登録した値）。
+      # Terraform 側は app_settings を ignore_changes にしているため、ここが実行時設定の反映経路になる。
+      # Secrets は実行時にしか列挙できないため toJSON(secrets) を使い、.env.example のキーだけを取り出す。
+      - name: Apply runtime settings
+        env:
+          SECRETS_JSON: ${{ toJSON(secrets) }}
+        run: |
+          keys="$(grep -oE '^[A-Za-z_][A-Za-z0-9_]*=' .env.example | tr -d '=' || true)"
+          settings=()
+          for key in $keys; do
+            value="$(jq -r --arg k "$key" '.[$k] // empty' <<< "$SECRETS_JSON")"
+            if [[ -n "$value" ]]; then
+              settings+=("${key}=${value}")
+              echo "  ✓ ${key}"
+            else
+              echo "  - ${key}（Secret 未登録のためスキップ）"
+            fi
+          done
+          if (( ${#settings[@]} == 0 )); then
+            echo "反映するランタイム設定はありません"
+            exit 0
+          fi
+          az functionapp config appsettings set \
+            --resource-group ${{ vars.AZURE_RESOURCE_GROUP }} \
+            --name ${{ vars.AZURE_FUNCTION_APP_NAME }} \
+            --settings "${settings[@]}" \
+            --output none
+
   build-teams-app:
     name: Build Teams App Package
     needs: deploy

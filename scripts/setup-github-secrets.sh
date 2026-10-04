@@ -74,39 +74,42 @@ gh variable set AZURE_RESOURCE_GROUP --env "$ENV" --body "$RESOURCE_GROUP"
 gh variable set MICROSOFT_APP_ID --env "$ENV" --body "$MICROSOFT_APP_ID"
 
 # --- 環境別ランタイム値の登録（Function App の App Settings に流れる値）---
-# .env.${ENV} から読み込んで GitHub Environment Secret に登録する
+# 対象キーは .env.example に列挙されたものだけ（キー一覧の Single Source of Truth）。
+# 値は .env.${ENV} から読み込み、GitHub Environment Secret に登録する。
+# デプロイ時に deploy-functions.yml が同じキー一覧を使って Function App の App Settings に反映する。
+ENV_EXAMPLE_FILE=".env.example"
 ENV_FILE=".env.${ENV}"
 
-if [[ ! -f "$ENV_FILE" ]]; then
+# .env.example から KEY=... 形式の行のキー名だけを抽出（コメント・空行は除外）
+RUNTIME_KEYS="$(grep -oE '^[A-Za-z_][A-Za-z0-9_]*=' "$ENV_EXAMPLE_FILE" | tr -d '=' || true)"
+
+if [[ -z "$RUNTIME_KEYS" ]]; then
+  echo ""
+  echo "--- ランタイム設定: ${ENV_EXAMPLE_FILE} にキーが定義されていないためスキップします ---"
+elif [[ ! -f "$ENV_FILE" ]]; then
   echo ""
   echo "警告: ${ENV_FILE} が見つからないため、ランタイム値の登録をスキップします" >&2
-  echo "  cp .env.example ${ENV_FILE} して値を設定後、再度このスクリプトを実行してください" >&2
+  echo "  cp ${ENV_EXAMPLE_FILE} ${ENV_FILE} して値を設定後、再度このスクリプトを実行してください" >&2
 else
   echo ""
   echo "--- ランタイム設定の登録（${ENV_FILE} → Environment: ${ENV}）---"
 
-  # サブシェル内で .env.${ENV} を source し、対象キーだけ gh に登録する
+  # サブシェル内で .env.${ENV} を source し、.env.example にあるキーだけ gh に登録する
   (
     set -a
     # shellcheck disable=SC1090
     source "$ENV_FILE"
     set +a
 
-    register() {
-      local name="$1"
-      local value="${!name:-}"
+    for name in $RUNTIME_KEYS; do
+      value="${!name:-}"
       if [[ -n "$value" ]]; then
         gh secret set "$name" --env "$ENV" --body "$value"
         echo "  ✓ ${name}"
       else
         echo "  - ${name} （空のためスキップ）"
       fi
-    }
-
-    register BANKING_SHEET_API_URL
-    register BANKING_SHEET_API_KEY
-    register EMPLOYEE_SHEET_API_URL
-    register EMPLOYEE_SHEET_API_KEY
+    done
   )
 fi
 

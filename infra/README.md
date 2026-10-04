@@ -147,6 +147,8 @@ Key Vault から認証情報を自動取得して以下を GitHub に登録し�
 | Variable | `AZURE_RESOURCE_GROUP`    | リソースグループ名（例: `rg-sample-bot-stg`）             |
 | Variable | `MICROSOFT_APP_ID`        | Bot 認証用 App ID（Teams アプリパッケージのビルドで使用） |
 
+加えて、`.env.example` にキーが定義されていて `.env.stg` が存在する場合は、その値も GitHub Environment `stg` の Secret として登録します（ボットが使う外部 API キーなどの実行時設定。詳細はルートの [README.md](../README.md) の「実行時設定（環境変数）の追加」を参照）。
+
 ## stg での動作確認
 
 ここまで完了したら、ルートの [README.md](../README.md) の「デプロイ」に従って stg 環境へコードをデプロイし、Teams から実際にボットが応答することを確認してください。

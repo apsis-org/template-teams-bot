@@ -73,7 +73,8 @@ resource "azurerm_function_app_flex_consumption" "main" {
   )
 
   # app_settings はデプロイワークフロー（.github/workflows/deploy-functions.yml の
-  # `az functionapp config appsettings set`）でランタイム値を差分更新する運用のため、
+  # "Apply runtime settings" ステップ）が .env.example に列挙されたキーを
+  # `az functionapp config appsettings set` で差分更新する運用のため、
   # Terraform での drift 検出・上書きを無効化する。
   # ここで指定した app_settings は初回 apply 時のみ反映され、以降は Terraform 管理外となる。
   lifecycle {

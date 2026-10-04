@@ -190,6 +190,17 @@ GitHub Actions の UI から手動でデプロイします。
 
 > **前提:** デプロイには GitHub Actions から Azure への認証設定が必要です。先に [infra/README.md](infra/README.md) のインフラ構築を完了してください。
 
+### 実行時設定（環境変数）の追加
+
+ボットが外部 API のキーなど、環境ごとに異なる設定値を必要とする場合は、次の流れで Function App の App Settings に反映します。`.env.example` が「キー一覧」の Single Source of Truth で、ここに書いたキーだけが対象になります。
+
+1. `.env.example` にキーを `KEY=` の形で追加する（値は空のまま。このファイルはコミットする）
+2. `cp .env.example .env.stg`（prod は `.env.prod`）して値を記入する（`.gitignore` 済み）
+3. `make setup-secrets` を実行すると、値が GitHub Environment（`stg` / `prod`）の Secret に登録される
+4. 上記の Deploy ワークフローを実行すると、デプロイ後に Secret が Function App の App Settings に反映され、コードから `process.env.KEY` で参照できる
+
+ローカル開発では、同じキーを `local.settings.json` の `Values` に追加してください。
+
 ### Teams アプリの登録・更新（手動）
 
 Teams アプリのカタログへの登録は手動で行います（Graph API が CI/CD からの自動デプロイに対応していないため）。
