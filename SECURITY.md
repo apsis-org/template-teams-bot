@@ -1,20 +1,20 @@
-# セキュリティポリシー
+# Security Policy
 
-## サポート対象のバージョン
+## Supported versions
 
-セキュリティ修正は最新リリースにのみ適用します。テンプレートから作成したリポジトリへは自動で反映されないため、[Releases](https://github.com/apsis-org/template-teams-bot/releases) と `CHANGELOG.md` を参照して各自で取り込んでください。
+Security fixes are applied to the latest release only. Repositories created from this template do not receive updates automatically; see [Releases](https://github.com/apsis-org/template-teams-bot/releases) and `CHANGELOG.md` and pull in the changes you need.
 
-## 脆弱性の報告
+## Reporting a vulnerability
 
-脆弱性は **公開の Issue には書かず**、GitHub の Private vulnerability reporting から非公開で報告してください。
+Please **do not open a public issue**. Report vulnerabilities privately through GitHub's private vulnerability reporting.
 
-1. [Security タブ](https://github.com/apsis-org/template-teams-bot/security) を開く
-2. **Report a vulnerability** から報告する
+1. Open the [Security tab](https://github.com/apsis-org/template-teams-bot/security)
+2. Choose **Report a vulnerability**
 
-報告には、可能な範囲で以下を含めてください。
+Where possible, include:
 
-- 影響を受けるファイル・設定
-- 再現手順
-- 想定される影響
+- The affected files or configuration
+- Steps to reproduce
+- The expected impact
 
-内容を確認のうえ、修正方針をご連絡します。
+We will review the report and get back to you with a remediation plan.
