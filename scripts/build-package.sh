@@ -3,9 +3,8 @@ set -euo pipefail
 
 # Teams アプリパッケージを生成するスクリプト
 # 前提: terraform apply 済み
-# 使い方: make build-app-package
+# 使い方: make build-package
 
-TFVARS_FILE="infra/envs/terraform.tfvars"
 APP_PACKAGE_DIR="appPackage"
 
 # --- 環境の選択 ---
