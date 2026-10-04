@@ -130,7 +130,7 @@ This bot supports **team / groupChat only** (no personal chat).
 - The template version is managed by release-please (`release-please-config.json` / `.release-please-manifest.json`)
 - Do not edit `version` in `package.json` or `CHANGELOG.md` by hand; release-please updates them
 - Commit messages follow Conventional Commits. Mark breaking changes with `feat!:` / `fix!:` or `BREAKING CHANGE:` in the body (a `BREAKING:` type is not recognized by release-please)
-- `version` in `appPackage/manifest.json` is the Teams app version and is independent of the template version. When a commit includes `manifest.json`, `.githooks/commit-msg` bumps it based on the commit message (`!` suffix / `BREAKING CHANGE:` → major, `feat` → minor, otherwise → patch). The hook is wired up via `core.hooksPath` by the `prepare` script during `pnpm install`
+- `version` in `appPackage/manifest.json` is the Teams app version and is independent of the template version. When a commit includes `manifest.json`, `.githooks/commit-msg` bumps it based on the commit message (`!` suffix / `BREAKING CHANGE:` → major, `feat` → minor, otherwise → patch) and `.githooks/post-commit` amends the bump into that commit (commit-msg runs after git has snapshotted the index, so it cannot change the commit content itself). The hooks replace only the `version` line to keep the file's formatting. They are wired up via `core.hooksPath` by the `prepare` script during `pnpm install`
 
 ## Environment variables
 

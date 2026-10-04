@@ -162,7 +162,7 @@ make setup-manifest
 
 #### manifest.json のバージョン自動更新
 
-`manifest.json` を含むコミットをすると、git フック（`.githooks/commit-msg`）が `version`（Teams アプリのバージョン）を自動で上げます。フックは `pnpm install` 時に `prepare` スクリプトで有効になります。
+`manifest.json` を含むコミットをすると、git フック（`.githooks/commit-msg` と `.githooks/post-commit`）が `version`（Teams アプリのバージョン）を自動で上げ、そのコミットに含めます。フックは `pnpm install` 時に `prepare` スクリプトで有効になります。
 
 | コミットメッセージ                                                 | 上がる位置 | 例            |
 | ------------------------------------------------------------------ | ---------- | ------------- |

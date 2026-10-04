@@ -162,7 +162,7 @@ Edit `appPackage/manifest.json` to fit your use case (developer information, com
 
 #### Automatic version bump of manifest.json
 
-When a commit includes `manifest.json`, the git hook (`.githooks/commit-msg`) bumps its `version` (the Teams app version) automatically. The hook is enabled by the `prepare` script during `pnpm install`.
+When a commit includes `manifest.json`, the git hooks (`.githooks/commit-msg` and `.githooks/post-commit`) bump its `version` (the Teams app version) automatically and fold the bump into that commit. The hooks are enabled by the `prepare` script during `pnpm install`.
 
 | Commit message                                                                        | Bumped part | Example       |
 | ------------------------------------------------------------------------------------- | ----------- | ------------- |
