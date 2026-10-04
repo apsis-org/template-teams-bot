@@ -1,9 +1,9 @@
 name: Release
 
-# main への push ごとに release-please がリリース PR を作成・更新する。
-# リリース PR をマージすると、タグ・GitHub Release・CHANGELOG.md・package.json の version が更新される。
-# バージョンは Conventional Commits から決まる（feat → minor、fix → patch、feat! / BREAKING CHANGE → major）。
-# 1.0.0 未満の間は bump-minor-pre-major により破壊的変更でも minor までしか上がらない。
+# On every push to main, release-please creates or updates a release PR.
+# Merging the release PR creates the tag and GitHub Release and updates CHANGELOG.md and package.json version.
+# The version is derived from Conventional Commits (feat → minor, fix → patch, feat! / BREAKING CHANGE → major).
+# Below 1.0.0, bump-minor-pre-major caps breaking changes at a minor bump.
 
 on:
   push:
@@ -17,7 +17,7 @@ permissions:
 jobs:
   release-please:
     name: Release Please
-    # テンプレートから作成したリポジトリでは実行しない（テンプレート本体のバージョン管理専用）
+    # Do not run in repositories created from the template (this is for versioning the template itself)
     if: github.repository == 'apsis-org/template-teams-bot'
     runs-on: ubuntu-latest
     steps:

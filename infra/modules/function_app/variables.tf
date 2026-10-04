@@ -26,7 +26,7 @@ variable "application_insights_connection_string" {
 }
 
 variable "app_settings" {
-  description = "Function App に追加するアプリケーション設定"
+  description = "Additional application settings for the Function App"
   type        = map(string)
   default     = {}
   sensitive   = true

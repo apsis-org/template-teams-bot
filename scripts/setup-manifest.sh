@@ -1,22 +1,22 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# appPackage/manifest.json のボット名を設定するスクリプト
-# 使い方: make setup-manifest
+# Sets the bot name in appPackage/manifest.json
+# Usage: make setup-manifest
 
 MANIFEST_FILE="appPackage/manifest.json"
 
 if ! command -v jq &> /dev/null; then
-  echo "エラー: jq がインストールされていません。brew install jq でインストールしてください" >&2
+  echo "Error: jq is not installed. Install it with: brew install jq" >&2
   exit 1
 fi
 
-echo "Teams アプリのボット名を設定します。"
+echo "Set the bot name for the Teams app."
 echo ""
-read -rp "ボット名を入力してください（例: 社内サポートボット）: " BOT_NAME
+read -rp "Bot name (e.g. Internal Support Bot): " BOT_NAME
 
 if [[ -z "$BOT_NAME" ]]; then
-  echo "エラー: ボット名を入力してください" >&2
+  echo "Error: the bot name must not be empty" >&2
   exit 1
 fi
 
@@ -29,6 +29,6 @@ jq \
 mv "$TMPFILE" "$MANIFEST_FILE"
 
 echo ""
-echo "=== manifest.json を更新しました ==="
-echo "  ボット名（stg）: ${BOT_NAME} [stg]"
-echo "  ボット名（prod）: ${BOT_NAME}"
+echo "=== Updated manifest.json ==="
+echo "  Bot name (stg):  ${BOT_NAME} [stg]"
+echo "  Bot name (prod): ${BOT_NAME}"

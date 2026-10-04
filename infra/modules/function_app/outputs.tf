@@ -11,6 +11,6 @@ output "id" {
 }
 
 output "principal_id" {
-  description = "Function App のマネージド ID（Key Vault 連携などで使用）"
+  description = "Managed identity of the Function App (used for Key Vault access etc.)"
   value       = azurerm_function_app_flex_consumption.main.identity[0].principal_id
 }

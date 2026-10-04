@@ -1,167 +1,169 @@
 # CLAUDE.md
 
-このファイルは Claude Code がこのリポジトリで作業する際のガイドラインです。
+Guidelines for Claude Code when working in this repository.
 
-## プロジェクト概要
+## Project overview
 
-TypeScript + Azure Functions v4 + Terraform で構築する Microsoft Teams Bot テンプレートリポジトリ。
+A Microsoft Teams Bot template repository built with TypeScript + Azure Functions v4 + Terraform.
 
-## コマンド
+## Commands
 
 ```bash
-# ビルド（Vite+ / tsdown によるバンドル）
-pnpm run build          # dist/ にバンドル出力
-pnpm run watch          # ウォッチモード
+# Build (bundled by Vite+ / tsdown)
+pnpm run build          # bundle into dist/
+pnpm run watch          # watch mode
 
-# ローカル起動
-pnpm start              # ビルド後に Azure Functions Core Tools で起動
-                        # エンドポイント: http://localhost:7071/api/messages
+# Run locally
+pnpm start              # build, then start Azure Functions Core Tools
+                        # endpoint: http://localhost:7071/api/messages
 
-# コード品質（Vite+ 統合）
+# Code quality (Vite+)
 pnpm run lint           # Oxlint
-pnpm run fmt            # Oxfmt（フォーマット）
-pnpm run typecheck      # tsc --noEmit（型チェック）
-pnpm test               # Vitest（1回実行）
-pnpm run test:watch     # Vitest（ウォッチモード）
+pnpm run fmt            # Oxfmt (format)
+pnpm run typecheck      # tsc --noEmit
+pnpm test               # Vitest (single run)
+pnpm run test:watch     # Vitest (watch mode)
 
-# Terraform（環境ディレクトリで実行）
-cd infra/envs/stg    # または infra/envs/prod
+# Terraform (run inside an environment directory)
+cd infra/envs/stg    # or infra/envs/prod
 terraform init
 terraform plan
 terraform apply
 ```
 
-## アーキテクチャ
+## Architecture
 
 ```
-Teams クライアント → Azure Bot Service → Azure Functions → Bot ロジック
+Teams client → Azure Bot Service → Azure Functions → bot logic
 ```
 
-### 主要ファイル
+### Key files
 
-| ファイル                      | 役割                                                |
-| ----------------------------- | --------------------------------------------------- |
-| `src/functions/messages.ts`   | Azure Functions HTTP トリガー（エントリーポイント） |
-| `src/bot/bot.ts`              | `TeamsActivityHandler` を継承したボットロジック     |
-| `src/bot/adapter.ts`          | `CloudAdapter` の設定・エラーハンドリング           |
-| `infra/main.tf`               | Azure リソース定義（共通モジュール）                |
-| `infra/envs/stg/`             | stg 環境の Terraform root                           |
-| `infra/envs/prod/`            | prod 環境の Terraform root                          |
-| `infra/modules/function_app/` | Function App / Storage / App Service Plan           |
-| `infra/modules/bot_service/`  | Azure Bot Service + Teams チャンネル                |
-| `infra/modules/monitoring/`   | Application Insights + Log Analytics                |
-| `appPackage/manifest.json`    | Teams アプリマニフェスト                            |
+| File                          | Role                                       |
+| ----------------------------- | ------------------------------------------ |
+| `src/functions/messages.ts`   | Azure Functions HTTP trigger (entry point) |
+| `src/bot/bot.ts`              | Bot logic extending `TeamsActivityHandler` |
+| `src/bot/adapter.ts`          | `CloudAdapter` setup and error handling    |
+| `infra/main.tf`               | Azure resource definitions (shared module) |
+| `infra/envs/stg/`             | Terraform root for stg                     |
+| `infra/envs/prod/`            | Terraform root for prod                    |
+| `infra/modules/function_app/` | Function App / Storage / App Service Plan  |
+| `infra/modules/bot_service/`  | Azure Bot Service + Teams channel          |
+| `infra/modules/monitoring/`   | Application Insights + Log Analytics       |
+| `appPackage/manifest.json`    | Teams app manifest                         |
 
-## 開発ガイドライン
+## Development guidelines
 
 ### TypeScript
 
-- `strict: true` を維持すること
-- `any` 型は使わない。やむを得ない場合は `unknown` を使う
-- モジュールは ESM（`"type": "module"`、`"module": "ESNext"`、`"moduleResolution": "Bundler"`）
-- バンドラー（tsdown）が解決するため相対インポートに `.js` 拡張子は不要
-- Node.js 組み込みモジュールは `node:` プレフィックスを使う（`import { Readable } from "node:stream"`）
-- ビルド・lint・format・test はすべて `vite.config.ts` で一元管理（Vite+ 統合）
+- Keep `strict: true`
+- Never use `any`; use `unknown` when unavoidable
+- Modules are ESM (`"type": "module"`, `"module": "ESNext"`, `"moduleResolution": "Bundler"`)
+- No `.js` extension on relative imports; the bundler (tsdown) resolves them
+- Use the `node:` prefix for Node.js built-ins (`import { Readable } from "node:stream"`)
+- Build, lint, format, and test are all configured in `vite.config.ts` (Vite+)
 
-### ボットロジックの追加
+### Adding bot logic
 
-`src/bot/bot.ts` の `TeamsBot` クラスに追加する。`onMessage` ハンドラー内でコマンドを分岐させるパターンを踏襲すること。
+Add it to the `TeamsBot` class in `src/bot/bot.ts`. Follow the existing pattern of branching on commands inside the `onMessage` handler.
 
 ```typescript
 this.onMessage(async (context, next) => {
   const text = context.activity.text?.trim() ?? "";
-  // ロジックを追加
-  await next(); // 必ず呼ぶ
+  // add logic here
+  await next(); // always call this
 });
 ```
 
-#### メッセージテキストの改行
+#### Line breaks in message text
 
-Teams はボットのテキストを **Markdown として解釈**するため、改行は以下のいずれかで書く：
+Teams renders bot text as **Markdown**, so write line breaks as one of:
 
-- `\n\n`（段落区切り。通常はこちらを使う）
-- `  \n`（末尾半角スペース2個 + `\n` でハード改行。段落間隔なしで改行したい場合）
+- `\n\n` (paragraph break; use this by default)
+- `  \n` (two trailing spaces + `\n` for a hard break without paragraph spacing)
 
-`\n` 単発は Markdown では空白扱いで改行されない。複数行メッセージや箇条書きを組み立てる際は `\n\n` を基本とすること。
+A single `\n` is treated as whitespace in Markdown and does not break the line. Use `\n\n` as the default when building multi-line messages or bullet lists.
 
-### 利用可能スコープ
+### Supported scopes
 
-本ボットは **team / groupChat のみ対応**（個人チャット非対応）。
+This bot supports **team / groupChat only** (no personal chat).
 
-- `appPackage/manifest.json` の `bots[].scopes` / `commandLists[].scopes` に `personal` を含めない
-- `src/bot/bot.ts` 側でも `onMessage` / `onMembersAdded` 冒頭で `context.activity.conversation.conversationType === "personal"` を判定し、案内メッセージを返して早期 return する防御的実装を維持すること
+- Do not include `personal` in `bots[].scopes` / `commandLists[].scopes` of `appPackage/manifest.json`
+- Keep the defensive check in `src/bot/bot.ts`: at the start of `onMessage` / `onMembersAdded`, test `context.activity.conversation.conversationType === "personal"`, reply with guidance, and return early
 
-### ビルド設定
+### Build configuration
 
-- `vite.config.ts` の `pack.entry` はオブジェクト形式 `{ index: "src/functions/messages.ts" }` で `dist/index.cjs` を出力
-- `pack.format` は `"cjs"` を維持する（`botbuilder` が CommonJS のため、ESM でバンドルすると Azure Functions ランタイム上で named import が失敗する）
-- `"type": "module"` のパッケージで CJS を出力するため、拡張子は `.cjs` になる
-- `package.json` の `main`（`dist/index.cjs`）とビルド出力を一致させること
-- TypeScript 7.0 はプログラム用 API を提供しないため、`pack.dts`（型定義ファイル生成）を有効にするとビルドが失敗する。本プロジェクトは型定義ファイル不要のため使わないこと（TypeScript 7.1 で API 復活予定）
+- `pack.entry` in `vite.config.ts` uses the object form `{ index: "src/functions/messages.ts" }` to emit `dist/index.cjs`
+- Keep `pack.format` as `"cjs"` (`botbuilder` is CommonJS; bundling as ESM breaks named imports on the Azure Functions runtime)
+- Because the package is `"type": "module"` and the output is CJS, the extension is `.cjs`
+- Keep `main` in `package.json` (`dist/index.cjs`) in sync with the build output
+- TypeScript 7.0 does not provide the programmatic API, so enabling `pack.dts` (type declaration output) breaks the build. This project does not need declaration files; do not enable it (the API is expected back in TypeScript 7.1)
 
 ### Azure Functions
 
-- Azure Functions v4 プログラミングモデルを使用（`app.http()` で登録）
-- `authLevel: "anonymous"` は Bot Framework が独自に署名検証するため意図的な設定
-- `route` は `"messages"` とする（Azure Functions が自動で `/api` プレフィックスを付与するため、`"api/messages"` にすると `/api/api/messages` になる）
-- `host.json` の extensionBundle バージョンは `[4.*, 5.0.0)` を維持
+- Uses the Azure Functions v4 programming model (registered with `app.http()`)
+- `authLevel: "anonymous"` is intentional; the Bot Framework verifies signatures itself
+- `route` must be `"messages"` (Azure Functions prepends `/api` automatically; `"api/messages"` would become `/api/api/messages`)
+- Keep the extensionBundle version in `host.json` at `[4.*, 5.0.0)`
 
 ### Terraform
 
-- 環境ごとにディレクトリ分離: `infra/envs/stg/`, `infra/envs/prod/`（state が完全に分離）
-- `infra/` 直下は共通モジュール。直接 `terraform apply` しない
-- モジュール分割: `function_app` / `bot_service` / `monitoring` / `key_vault`
-- リソース名はすべて `prefix`（`${project_name}-${environment}`）を使って命名
-- 機密値（パスワード等）は `sensitive = true` を付ける
-- Function App は Flex Consumption（FC1）プラン。`azurerm_function_app_flex_consumption` リソースを使用
-- Bot 認証タイプは `SingleTenant`（MultiTenant は Azure により廃止）
-- `azurerm_bot_service_azure_bot.display_name` は `appPackage/manifest.json` の `name.short` を `jsondecode` で読み込み、`__ENV_SUFFIX__` を `build-teams-app.yml` と同じ規則で置換して導出する。ボット表示名のハードコードは禁止（manifest を Single Source of Truth として扱う）
+- One directory per environment: `infra/envs/stg/`, `infra/envs/prod/` (fully separate state)
+- `infra/` itself is the shared module; never run `terraform apply` there directly
+- Modules: `function_app` / `bot_service` / `monitoring` / `key_vault`
+- All resource names use `prefix` (`${project_name}-${environment}`)
+- Mark sensitive values (passwords etc.) with `sensitive = true`
+- The Function App uses the Flex Consumption (FC1) plan via the `azurerm_function_app_flex_consumption` resource
+- The bot authentication type is `SingleTenant` (MultiTenant has been retired by Azure)
+- `azurerm_bot_service_azure_bot.display_name` is derived from `name.short` in `appPackage/manifest.json` via `jsondecode`, replacing `__ENV_SUFFIX__` with the same rule as `build-teams-app.yml`. Never hardcode the bot display name (the manifest is the single source of truth)
 
 ### GitHub Actions
 
-- Azure 認証はサービスプリンシパル（`AZURE_CREDENTIALS`）を使用。Key Vault から自動取得
-- `deploy-functions.yml`: `workflow_dispatch` のみ。Function App へのデプロイと Teams アプリパッケージのビルドを選択実行
-- `build-teams-app.yml`: Teams アプリの ZIP パッケージを生成し Artifact として保存。Teams 管理センターへのアップロードは手動
-- `ci.yml`: PR と main への push で lint / format check / typecheck / test / build を実行
-- `release.yml`: release-please によるリリース PR の作成とリリース。`if: github.repository == 'apsis-org/template-teams-bot'` でテンプレート本体以外では実行しない（この条件は外さないこと）
+- Azure authentication uses a service principal (`AZURE_CREDENTIALS`), fetched automatically from Key Vault
+- `deploy-functions.yml`: `workflow_dispatch` only. Deploys to the Function App and optionally builds the Teams app package
+- `build-teams-app.yml`: builds the Teams app ZIP and stores it as an artifact. Uploading to the Teams admin center is manual
+- `ci.yml`: runs lint / format check / typecheck / test / build on PRs and pushes to main
+- `release.yml`: creates release PRs and releases via release-please. Guarded by `if: github.repository == 'apsis-org/template-teams-bot'` so it never runs outside the template itself (do not remove this condition)
 
-### バージョン管理
+### Versioning
 
-- テンプレート本体のバージョンは release-please で管理する（`release-please-config.json` / `.release-please-manifest.json`）
-- `package.json` の `version` と `CHANGELOG.md` は release-please が更新するため、手で編集しない
-- コミットメッセージは Conventional Commits に従う。破壊的変更は `feat!:` / `fix!:` または本文の `BREAKING CHANGE:` で示す（`BREAKING:` という type は release-please に認識されない）
-- `appPackage/manifest.json` の `version` は Teams アプリのバージョンで、テンプレート本体のバージョンとは別物。`manifest.json` を含むコミット時に `.githooks/commit-msg` がコミットメッセージから判定して自動で上げる（`!` 付き / `BREAKING CHANGE:` → major、`feat` → minor、それ以外 → patch）。フックは `pnpm install` の `prepare` で `core.hooksPath` に設定される
+- The template version is managed by release-please (`release-please-config.json` / `.release-please-manifest.json`)
+- Do not edit `version` in `package.json` or `CHANGELOG.md` by hand; release-please updates them
+- Commit messages follow Conventional Commits. Mark breaking changes with `feat!:` / `fix!:` or `BREAKING CHANGE:` in the body (a `BREAKING:` type is not recognized by release-please)
+- `version` in `appPackage/manifest.json` is the Teams app version and is independent of the template version. When a commit includes `manifest.json`, `.githooks/commit-msg` bumps it based on the commit message (`!` suffix / `BREAKING CHANGE:` → major, `feat` → minor, otherwise → patch) and `.githooks/post-commit` amends the bump into that commit (commit-msg runs after git has snapshotted the index, so it cannot change the commit content itself). The hooks replace only the `version` line to keep the file's formatting. They are wired up via `core.hooksPath` by the `prepare` script during `pnpm install`
 
-## 環境変数
+## Environment variables
 
-ローカル開発は `local.settings.json`（`.gitignore` 済み）、本番は Function App の App Settings で管理。
+Local development uses `local.settings.json` (gitignored); production uses the Function App's App Settings.
 
-| 変数名                 | 説明                                                     |
-| ---------------------- | -------------------------------------------------------- |
-| `MicrosoftAppId`       | Bot 認証用 App ID                                        |
-| `MicrosoftAppPassword` | Bot 認証用シークレット                                   |
-| `MicrosoftAppType`     | `SingleTenant` / `UserAssignedMSI`（MultiTenant は廃止） |
-| `MicrosoftAppTenantId` | SingleTenant 時のテナント ID                             |
+| Variable               | Description                                                 |
+| ---------------------- | ----------------------------------------------------------- |
+| `MicrosoftAppId`       | App ID for bot authentication                               |
+| `MicrosoftAppPassword` | Secret for bot authentication                               |
+| `MicrosoftAppType`     | `SingleTenant` / `UserAssignedMSI` (MultiTenant is retired) |
+| `MicrosoftAppTenantId` | Tenant ID when using SingleTenant                           |
 
-## 注意事項
+To add bot-specific runtime settings (external API keys etc.), add `KEY=` to `.env.example`. Both `scripts/setup-github-secrets.sh` and the "Apply runtime settings" step in `deploy-functions.yml` read the key list from `.env.example`, so never hardcode key names in scripts or workflows.
 
-- `local.settings.json` は絶対にコミットしない
-- `*.tfvars` も `.gitignore` 済みのため、コミットしない
-- `appPackage/manifest.json` のプレースホルダー（`__BOT_ID__` 等）はデプロイ時に自動置換される
-- Terraform の `azurerm_bot_service_azure_bot` の `location` は `"global"` 固定（Azure の仕様）
+## Notes
 
-### 機密ファイルの取り扱い（Claude Code 権限）
+- Never commit `local.settings.json`
+- `*.tfvars` files are gitignored as well; never commit them
+- Placeholders in `appPackage/manifest.json` (`__BOT_ID__` etc.) are replaced automatically at deploy time
+- `location` of the Terraform `azurerm_bot_service_azure_bot` is fixed to `"global"` (Azure requirement)
 
-`.claude/settings.json` で `.env` 系 / `.tfvars` 系 / `local.settings.json` の読み込みをブロックしている。**読もうとしないこと**。
+### Handling sensitive files (Claude Code permissions)
+
+`.claude/settings.json` blocks reading `.env`-style files, `.tfvars` files, and `local.settings.json`. **Do not try to read them.**
 
 - **allow**
   - `.env.example`
   - `**/*.tfvars.example`
   - `local.settings.json.example`
-- **deny（Read）**
+- **deny (Read)**
   - `.env` / `*.env` / `.env.local` / `.env.development(.*)` / `.env.production(.*)` / `.env.staging(.*)` / `.env.test(.*)` / `.env.*.local`
   - `**/*.tfvars` / `**/*.tfvars.json` / `**/*.auto.tfvars` / `**/*.auto.tfvars.json`
   - `local.settings.json`
-- **deny（Bash）**: 上記ファイルに対する `cat` / `head` / `tail` / `less` / `more` / `grep` / `sed` / `awk` / `vim` / `nano` / `bat`
+- **deny (Bash)**: `cat` / `head` / `tail` / `less` / `more` / `grep` / `sed` / `awk` / `vim` / `nano` / `bat` on the files above
 
-環境変数や Terraform 変数の中身を確認したい場合は `.env.example` / `*.tfvars.example` / `local.settings.json.example` を参照し、実ファイルの値はユーザーに確認すること。
+To check the contents of environment variables or Terraform variables, refer to `.env.example` / `*.tfvars.example` / `local.settings.json.example`, and ask the user for the real values.

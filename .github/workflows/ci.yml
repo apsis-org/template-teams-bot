@@ -20,13 +20,13 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # pnpm のバージョンは package.json の packageManager から決まる
+      # The pnpm version comes from packageManager in package.json
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
         with:
           run_install: false
 
-      # cache: pnpm は pnpm がインストール済みである必要があるため、pnpm のセットアップ後に実行する
+      # cache: pnpm requires pnpm to be installed already, so run this after setting up pnpm
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
@@ -66,8 +66,8 @@ jobs:
         with:
           terraform_version: ${{ steps.tf-version.outputs.version }}
 
-      # envs/{stg,prod}/terraform.tfvars は ../terraform.tfvars へのシンボリックリンク（実体は .gitignore 済み）。
-      # リンク切れのままだと fmt がエラーになるため、CI では example から実体を作成する
+      # envs/{stg,prod}/terraform.tfvars are symbolic links to ../terraform.tfvars (the target is gitignored).
+      # fmt fails on a dangling link, so create the target from the example in CI
       - name: Create terraform.tfvars from example
         run: cp infra/envs/terraform.tfvars.example infra/envs/terraform.tfvars
 

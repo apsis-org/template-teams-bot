@@ -1,9 +1,9 @@
 terraform {
   required_version = ">= 1.7.0"
 
-  # リモートステート管理（Azure Blob Storage）
-  # デフォルトはローカルステート。本番環境ではコメントアウトを外して使用してください。
-  # 事前に以下でストレージを作成してください:
+  # Remote state (Azure Blob Storage)
+  # Local state by default. Uncomment the block below to use remote state in production.
+  # Create the storage beforehand:
   #   az group create --name rg-terraform-state --location japaneast
   #   az storage account create --name <YOUR_STORAGE_ACCOUNT> --resource-group rg-terraform-state --sku Standard_LRS
   #   az storage container create --name tfstate --account-name <YOUR_STORAGE_ACCOUNT>
@@ -39,19 +39,19 @@ provider "azurerm" {
 }
 
 variable "subscription_id" {
-  description = "Azure サブスクリプション ID"
+  description = "Azure subscription ID"
   type        = string
 }
 
 provider "azuread" {}
 
 variable "project_name" {
-  description = "プロジェクト名（リソース名のプレフィックスに使用）"
+  description = "Project name (used as the prefix of resource names)"
   type        = string
 }
 
 variable "shared_key_vault_name" {
-  description = "組織共通 Key Vault 名（make setup-secrets で参照するのみ）"
+  description = "Name of the organization-wide Key Vault (read by make setup-secrets only)"
   type        = string
   default     = ""
 }

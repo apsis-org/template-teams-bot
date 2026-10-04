@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: "デプロイ先の環境"
+        description: "Target environment"
         required: true
         default: "stg"
         type: choice
@@ -12,7 +12,7 @@ on:
           - stg
           - prod
       deploy_teams_app:
-        description: "Teams アプリも更新する（manifest.json を変更した場合）"
+        description: "Also update the Teams app (when manifest.json changed)"
         required: false
         default: false
         type: boolean
@@ -98,6 +98,35 @@ jobs:
             --name ${{ vars.AZURE_FUNCTION_APP_NAME }} \
             --src deploy.zip \
             --build-remote false
+
+      # Apply the GitHub Environment Secrets that correspond to the keys listed in .env.example
+      # to the Function App's App Settings (values registered by `make setup-secrets`).
+      # Terraform ignores changes to app_settings, so this step is the path for runtime settings.
+      # Secrets can only be enumerated at runtime, hence toJSON(secrets); only keys from .env.example are picked.
+      - name: Apply runtime settings
+        env:
+          SECRETS_JSON: ${{ toJSON(secrets) }}
+        run: |
+          keys="$(grep -oE '^[A-Za-z_][A-Za-z0-9_]*=' .env.example | tr -d '=' || true)"
+          settings=()
+          for key in $keys; do
+            value="$(jq -r --arg k "$key" '.[$k] // empty' <<< "$SECRETS_JSON")"
+            if [[ -n "$value" ]]; then
+              settings+=("${key}=${value}")
+              echo "  ✓ ${key}"
+            else
+              echo "  - ${key} (skipped: no Secret registered)"
+            fi
+          done
+          if (( ${#settings[@]} == 0 )); then
+            echo "No runtime settings to apply"
+            exit 0
+          fi
+          az functionapp config appsettings set \
+            --resource-group ${{ vars.AZURE_RESOURCE_GROUP }} \
+            --name ${{ vars.AZURE_FUNCTION_APP_NAME }} \
+            --settings "${settings[@]}" \
+            --output none
 
   build-teams-app:
     name: Build Teams App Package

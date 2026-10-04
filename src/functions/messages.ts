@@ -11,8 +11,7 @@ import { TeamsBot } from "../bot/bot";
 const bot = new TeamsBot();
 
 /**
- * Bot Framework の Request インターフェースに準拠した
- * Azure Functions HttpRequest のアダプター
+ * Adapts an Azure Functions HttpRequest to the Bot Framework Request interface
  */
 class AzureFunctionsRequestAdapter implements Request {
   body: Record<string, unknown> | undefined;
@@ -34,8 +33,7 @@ class AzureFunctionsRequestAdapter implements Request {
 }
 
 /**
- * Bot Framework の Response インターフェースに準拠した
- * Azure Functions HttpResponse のアダプター
+ * Adapts the Bot Framework Response interface to an Azure Functions HttpResponse
  */
 class AzureFunctionsResponseAdapter implements Response {
   socket: unknown = null;
@@ -75,8 +73,8 @@ class AzureFunctionsResponseAdapter implements Response {
 }
 
 /**
- * Azure Functions HTTP トリガー - Teams Bot のメッセージエンドポイント
- * Bot Framework からのアクティビティを受信し、ボットロジックに渡します
+ * Azure Functions HTTP trigger - the Teams bot messaging endpoint
+ * Receives activities from the Bot Framework and hands them to the bot logic
  */
 app.http("messages", {
   methods: ["POST"],

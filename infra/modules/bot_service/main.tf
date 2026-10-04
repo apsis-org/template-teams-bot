@@ -6,11 +6,11 @@ resource "azurerm_bot_service_azure_bot" "main" {
   microsoft_app_id        = var.microsoft_app_id
   microsoft_app_type      = var.microsoft_app_type
   microsoft_app_tenant_id = var.microsoft_app_tenant_id
-  sku                     = "F0" # 無料プラン（本番は S1 を推奨）
+  sku                     = "F0" # free tier (S1 recommended for production)
   endpoint                = var.endpoint
   tags                    = var.tags
 
-  # Teams チャンネルは別途 azurerm_bot_channel_ms_teams で有効化
+  # The Teams channel is enabled separately via azurerm_bot_channel_ms_teams
 }
 
 resource "azurerm_bot_channel_ms_teams" "main" {

@@ -10,7 +10,7 @@ updates:
     schedule:
       interval: "monthly"
     ignore:
-      # @types/node は Azure Functions の Node.js ランタイム（infra/modules/function_app の runtime_version）に
-      # メジャーバージョンを合わせる。ランタイムを上げるときに手動で更新する
+      # Keep the major version of @types/node aligned with the Azure Functions Node.js runtime
+      # (runtime_version in infra/modules/function_app). Update it manually when bumping the runtime.
       - dependency-name: "@types/node"
         update-types: ["version-update:semver-major"]

@@ -1,68 +1,70 @@
-# インフラ構築ガイド
+# Infrastructure Setup Guide
 
-このドキュメントは、テンプレートから新しいプロジェクトを作成した際に **1回だけ** 実行するインフラ構築手順です。
-他の開発者はルートの [README.md](../README.md) の「ローカル開発」セクションから始めてください。
+**English** | [日本語](README.ja.md)
 
-## ディレクトリ構成
+This document describes the infrastructure setup that is performed **once**, when you create a new project from this template.
+Other developers should start from the "Local development" section of the root [README.md](../README.md).
 
-環境ごとにディレクトリが分かれており、state が完全に分離されています。
+## Directory layout
+
+Each environment has its own directory, so their state files are fully isolated.
 
 ```
 infra/
   envs/
-    terraform.tfvars.example      ← project_name を設定（stg/prod 共通）
-    terraform.tfvars              ← ↑を cp して作成（.gitignore 済み）
+    terraform.tfvars.example      ← set project_name here (shared by stg/prod)
+    terraform.tfvars              ← created by copying the file above (gitignored)
     stg/
-      main.tf                     ← stg 環境の root
-      terraform.tfvars → ../terraform.tfvars（シンボリックリンク）
+      main.tf                     ← root module for stg
+      terraform.tfvars → ../terraform.tfvars (symbolic link)
     prod/
-      main.tf                     ← prod 環境の root
-      terraform.tfvars → ../terraform.tfvars（シンボリックリンク）
-  main.tf                         ← 共通モジュール（直接実行しない）
+      main.tf                     ← root module for prod
+      terraform.tfvars → ../terraform.tfvars (symbolic link)
+  main.tf                         ← shared module (never run directly)
 ```
 
-## 事前準備: 組織共通のセットアップ（組織で1回のみ）
+## Preparation: organization-wide setup (once per organization)
 
-GitHub Actions から Azure へデプロイするためのサービスプリンシパルと、その認証情報を保管する組織共通の Key Vault を用意します。
-**組織で1回だけ**行う作業で、このテンプレートから2つ目以降のボットを作る場合は不要です（④の Key Vault 名だけ確認してください）。
+Prepare a service principal for deploying from GitHub Actions to Azure, and an organization-wide Key Vault that stores its credentials.
+This is done **once per organization**. If you create a second bot from this template, skip it (just confirm the Key Vault name in step ④).
 
-Azure Portal（サブスクリプションの Owner 権限が必要）で以下を行ってください：
+In the Azure Portal (requires the Owner role on the subscription):
 
-**① サービスプリンシパルの作成**
+**① Create the service principal**
 
-1. Microsoft Entra ID → アプリの登録 → 新規登録
-2. 名前: `sp-github-actions`、登録
-3. 証明書とシークレット → 新しいクライアントシークレット → 追加
-4. 表示された**値**をメモ（一度しか表示されません）
+1. Microsoft Entra ID → App registrations → New registration
+2. Name: `sp-github-actions`, then Register
+3. Certificates & secrets → New client secret → Add
+4. Copy the displayed **value** (it is shown only once)
 
-**② ロールの割り当て**
+**② Assign a role**
 
-1. サブスクリプション → アクセス制御 (IAM) → ロール割り当ての追加
-2. ロール: **共同作成者**、メンバー: `sp-github-actions` を選択
-3. 保存
+1. Subscription → Access control (IAM) → Add role assignment
+2. Role: **Contributor**, Members: select `sp-github-actions`
+3. Save
 
-**③ 組織共通 Key Vault の作成**
+**③ Create the organization-wide Key Vault**
 
-1. リソースグループ `rg-shared` を作成
-2. Key Vault を作成（例: `kv-<組織名>-gh-actions`）、リージョン: `Japan East`、アクセス許可モデル: Azure RBAC
-3. シークレットを登録：
-   - `sp-github-actions-client-id`：クライアント ID
-   - `sp-github-actions-client-secret`：クライアントシークレット
-4. 開発者全員に **キー コンテナー シークレット責任者** ロールを付与
+1. Create a resource group `rg-shared`
+2. Create a Key Vault (for example `kv-<org>-gh-actions`), region `Japan East` (or your preferred region), permission model: Azure RBAC
+3. Register the secrets:
+   - `sp-github-actions-client-id`: the client ID
+   - `sp-github-actions-client-secret`: the client secret
+4. Grant every developer the **Key Vault Secrets Officer** role
 
-**④ Key Vault 名を控える**
+**④ Note the Key Vault name**
 
-③で作成した Key Vault 名は、後述の「2. project_name の設定」で `infra/envs/terraform.tfvars` の `shared_key_vault_name` に設定します。
+The Key Vault name from ③ goes into `shared_key_vault_name` in `infra/envs/terraform.tfvars` in "2. Set project_name" below.
 
 ```hcl
-shared_key_vault_name = "kv-<組織名>-gh-actions"
+shared_key_vault_name = "kv-<org>-gh-actions"
 ```
 
-## Terraform によるインフラ構築
+## Building the infrastructure with Terraform
 
-stg / prod の各環境ディレクトリで `terraform plan` / `terraform apply` を実行すると、以下のリソースが **環境ごとに独立して** 作成されます。
+Running `terraform plan` / `terraform apply` in each environment directory creates the following resources **independently per environment**.
 
-| リソース         | stg                     | prod                     |
+| Resource         | stg                     | prod                     |
 | ---------------- | ----------------------- | ------------------------ |
 | Resource Group   | `rg-<project>-stg`      | `rg-<project>-prod`      |
 | Function App     | `func-<project>-stg`    | `func-<project>-prod`    |
@@ -70,52 +72,52 @@ stg / prod の各環境ディレクトリで `terraform plan` / `terraform apply
 | Key Vault        | `kv-<project>-stg`      | `kv-<project>-prod`      |
 | App Registration | `app-<project>-stg-bot` | `app-<project>-prod-bot` |
 
-ボットの認証情報（`MicrosoftAppId` / `MicrosoftAppPassword`）はメッセージングエンドポイントと1対1で紐づくため、環境・プロジェクトごとに別々の認証情報が必要です。
-`terraform apply` がこれらの生成から Key Vault への保存まで自動で行います。
+The bot credentials (`MicrosoftAppId` / `MicrosoftAppPassword`) are bound one-to-one to a messaging endpoint, so each environment and project needs its own.
+`terraform apply` generates them and stores them in Key Vault automatically.
 
-### 料金目安
+### Estimated cost
 
-| リソース                  | プラン                 | 料金                                 |
-| ------------------------- | ---------------------- | ------------------------------------ |
-| Function App              | Flex Consumption (FC1) | 月25万回実行 + 100,000 GB-s まで無料 |
-| Bot Service               | F0                     | 無料                                 |
-| Storage Account           | Standard LRS           | 数円〜数十円/月                      |
-| Key Vault                 | Standard               | 1万操作あたり約4円（ほぼ発生しない） |
-| Application Insights      | —                      | 5GB/月まで無料                       |
-| Log Analytics             | —                      | 5GB/月まで無料                       |
-| Azure AD App Registration | —                      | 無料                                 |
+| Resource                  | Plan                   | Price                                        |
+| ------------------------- | ---------------------- | -------------------------------------------- |
+| Function App              | Flex Consumption (FC1) | Free up to 250k executions + 100,000 GB-s/mo |
+| Bot Service               | F0                     | Free                                         |
+| Storage Account           | Standard LRS           | A few cents per month                        |
+| Key Vault                 | Standard               | About $0.03 per 10k operations (negligible)  |
+| Application Insights      | —                      | Free up to 5 GB/month                        |
+| Log Analytics             | —                      | Free up to 5 GB/month                        |
+| Azure AD App Registration | —                      | Free                                         |
 
-社内ボット程度の利用量であれば、月額はほぼ0円（Storage の数円程度）です。
+For an internal bot with light traffic the monthly cost is effectively zero (a few cents of storage).
 
-### 1. Azure にログイン
+### 1. Sign in to Azure
 
 ```bash
 az login
 ```
 
-### 2. project_name の設定
+### 2. Set project_name
 
 ```bash
 cp infra/envs/terraform.tfvars.example infra/envs/terraform.tfvars
 ```
 
-`infra/envs/terraform.tfvars` を開き、以下を設定してください（stg / prod 共通で使用されます）。
+Open `infra/envs/terraform.tfvars` and set the following (shared by stg and prod).
 
-- `project_name`: **必ずプロジェクト固有の値に書き換える**
-- `subscription_id`: デプロイ先の Azure サブスクリプション ID
-- `shared_key_vault_name`: [事前準備](#事前準備-組織共通のセットアップ組織で1回のみ)で作成した組織共通 Key Vault 名
+- `project_name`: **always change this to a value unique to your project**
+- `subscription_id`: the Azure subscription to deploy to
+- `shared_key_vault_name`: the organization-wide Key Vault created in [Preparation](#preparation-organization-wide-setup-once-per-organization)
 
-> ⚠️ **注意**: デフォルト値の `myteamsbot` のまま `terraform apply` するとリソース名に固定され、後からの変更は容易ではありません（Key Vault は削除後 soft-delete 期間中は同名再作成不可、Storage Account 名はグローバルに一意、など）。最初に必ず変更してください。
+> ⚠️ **Warning**: If you run `terraform apply` with the default `myteamsbot`, it is baked into the resource names and is hard to change later (a deleted Key Vault cannot be recreated under the same name during the soft-delete period, Storage Account names are globally unique, and so on). Always change it first.
 
-`project_name` の制約:
+Constraints on `project_name`:
 
-- 小文字英数字とハイフンのみ、3〜20 文字
-- Azure リソース名のプレフィックス（`rg-<project_name>-<env>` 等）に使用される
-- 例: `banking-info-bot`, `payroll-bot`
+- Lowercase letters, digits, and hyphens only, 3 to 20 characters
+- Used as the prefix of Azure resource names (`rg-<project_name>-<env>` and so on)
+- Examples: `banking-info-bot`, `payroll-bot`
 
-### 3. stg 環境のインフラ構築
+### 3. Build the stg environment
 
-まずは stg 環境のみを構築します。prod はここでは作成しません（stg で動作確認が完了してから後述の手順で展開します）。
+Build only stg first. Do not create prod yet; it is rolled out after stg has been verified (see below).
 
 ```bash
 cd infra/envs/stg
@@ -124,44 +126,46 @@ terraform plan
 terraform apply
 ```
 
-`terraform apply` により、Azure リソースの作成と同時にボット認証情報（`MicrosoftAppId` / `MicrosoftAppPassword`）が Key Vault に自動保存されます。
+`terraform apply` creates the Azure resources and, at the same time, stores the bot credentials (`MicrosoftAppId` / `MicrosoftAppPassword`) in Key Vault.
 
-> **Note:** `terraform destroy` を実行すると Function App ごと削除されます。再度 `terraform apply` した後は GitHub Actions からコードを再デプロイしてください。
+> **Note:** `terraform destroy` deletes the Function App as well. After running `terraform apply` again, redeploy the code from GitHub Actions.
 
-## GitHub Actions のデプロイ設定（stg）
+## GitHub Actions deployment settings (stg)
 
-`terraform apply` が完了した後に、リポジトリのルートで実行してください。`az login` と `gh auth login` が完了していること。
+Run this from the repository root after `terraform apply` has completed. `az login` and `gh auth login` must be done.
 
 ```bash
-cd ../../..    # infra/envs/stg からリポジトリのルートへ戻る
+cd ../../..    # back to the repository root from infra/envs/stg
 make setup-secrets
-# プロンプトで「stg」を選択
+# choose "stg" at the prompt
 ```
 
-Key Vault から認証情報を自動取得して以下を GitHub に登録します（Variables は GitHub Environment `stg` に紐づきます）。
+The script fetches the credentials from Key Vault and registers the following in GitHub (Variables are bound to the GitHub Environment `stg`).
 
-| 種別     | 名前                      | 内容                                                      |
-| -------- | ------------------------- | --------------------------------------------------------- |
-| Secret   | `AZURE_CREDENTIALS`       | サービスプリンシパルの認証情報（リポジトリ共通）          |
-| Variable | `AZURE_FUNCTION_APP_NAME` | Function App 名（例: `func-sample-bot-stg`）              |
-| Variable | `AZURE_RESOURCE_GROUP`    | リソースグループ名（例: `rg-sample-bot-stg`）             |
-| Variable | `MICROSOFT_APP_ID`        | Bot 認証用 App ID（Teams アプリパッケージのビルドで使用） |
+| Kind     | Name                      | Content                                                             |
+| -------- | ------------------------- | ------------------------------------------------------------------- |
+| Secret   | `AZURE_CREDENTIALS`       | Service principal credentials (repository-wide)                     |
+| Variable | `AZURE_FUNCTION_APP_NAME` | Function App name (e.g. `func-sample-bot-stg`)                      |
+| Variable | `AZURE_RESOURCE_GROUP`    | Resource group name (e.g. `rg-sample-bot-stg`)                      |
+| Variable | `MICROSOFT_APP_ID`        | App ID for bot authentication (used to build the Teams app package) |
 
-## stg での動作確認
+In addition, if `.env.example` defines keys and `.env.stg` exists, their values are registered as Secrets in the GitHub Environment `stg` as well (runtime settings such as external API keys the bot uses; see "Adding runtime settings (environment variables)" in the root [README.md](../README.md)).
 
-ここまで完了したら、ルートの [README.md](../README.md) の「デプロイ」に従って stg 環境へコードをデプロイし、Teams から実際にボットが応答することを確認してください。
+## Verifying stg
 
-- GitHub Actions からデプロイ先に `stg` を選択して実行
-- Teams アプリパッケージ（`teams-app-stg-*`）を Teams 管理センターにアップロード
-- Teams 上でボットにメッセージを送り、想定どおり応答することを確認
+Once the above is done, follow "Deployment" in the root [README.md](../README.md) to deploy the code to stg and confirm the bot actually responds in Teams.
 
-## prod 環境への展開
+- Run the GitHub Actions deployment with `stg` as the target
+- Upload the Teams app package (`teams-app-stg-*`) in the Teams admin center
+- Send the bot a message in Teams and confirm it responds as expected
 
-> ⚠️ **stg で動作確認がすべて完了してから実施してください。** stg で問題が見つかった場合は prod を触る前に stg 側で修正・再デプロイ・再確認を行います。
+## Rolling out prod
 
-prod 環境は stg と同じ手順を繰り返します。
+> ⚠️ **Only after everything has been verified in stg.** If you find a problem in stg, fix, redeploy, and re-verify there before touching prod.
 
-### 1. prod 環境のインフラ構築
+prod repeats the same steps as stg.
+
+### 1. Build the prod environment
 
 ```bash
 cd infra/envs/prod
@@ -170,45 +174,45 @@ terraform plan
 terraform apply
 ```
 
-stg と prod で state が分離されているため、互いに影響しません。
+stg and prod have separate state, so they do not affect each other.
 
-### 2. GitHub Actions のデプロイ設定（prod）
+### 2. GitHub Actions deployment settings (prod)
 
 ```bash
-cd ../../..    # infra/envs/prod からリポジトリのルートへ戻る
+cd ../../..    # back to the repository root from infra/envs/prod
 make setup-secrets
-# プロンプトで「prod」を選択
+# choose "prod" at the prompt
 ```
 
-GitHub Environment `prod` に Variables が登録されます。
+The Variables are registered in the GitHub Environment `prod`.
 
-### 3. prod へのデプロイと動作確認
+### 3. Deploy to prod and verify
 
-ルートの [README.md](../README.md) の「デプロイ」に従って、デプロイ先に `prod` を選択して実行し、Teams アプリパッケージ（`teams-app-prod-*`）を Teams 管理センターにアップロードして動作確認してください。
+Follow "Deployment" in the root [README.md](../README.md): run the deployment with `prod` as the target, upload the Teams app package (`teams-app-prod-*`) in the Teams admin center, and verify.
 
-## 参考
+## Reference
 
-通常のデプロイフロー（GitHub Actions → Azure Functions → Teams）では不要ですが、手元で確認したい／特殊なデバッグをしたい場合に使うコマンドをまとめています。
+The commands below are not needed in the normal deployment flow (GitHub Actions → Azure Functions → Teams). They are for checking values locally or for special debugging.
 
-### Terraform 出力値の確認
+### Reading Terraform outputs
 
-デプロイ先の URL や ID を手元で確認したいとき、該当 env ディレクトリで `terraform output` を叩きます（`make setup-secrets` は Terraform state から自動で値を読むので、デプロイフロー上は実行不要）。
+To look up the deployed URL or IDs locally, run `terraform output` in the environment directory (`make setup-secrets` reads these from the Terraform state itself, so this is not required for deployment).
 
 ```bash
-cd infra/envs/stg   # または infra/envs/prod
+cd infra/envs/stg   # or infra/envs/prod
 terraform output bot_messaging_endpoint
 terraform output microsoft_app_id
 terraform output key_vault_name
 
-# sensitive な値（例: App Password）は -raw で取得
+# sensitive values (e.g. the app password) need -raw
 terraform output -raw microsoft_app_password
 ```
 
-### ローカル実行時の Bot Framework 認証情報の取得
+### Fetching Bot Framework credentials for local runs
 
-ローカルで `pnpm start` を起動し、ngrok 等で Azure Bot Service から自分のマシンへトンネル経由でメッセージを受け取って動作確認したい場合のみ実行します。Agents Playground で済ませる場合や、GitHub Actions 経由のデプロイ運用だけなら不要です。
+Only needed if you run `pnpm start` locally and want Azure Bot Service to reach your machine through a tunnel such as ngrok. Not needed if Agents Playground is enough or you only deploy via GitHub Actions.
 
-Key Vault から取得した値で `local.settings.json` の `MicrosoftAppId` / `MicrosoftAppPassword` / `MicrosoftAppTenantId` / `MicrosoftAppType` を更新します（既存の他のキーは保持）。
+Updates `MicrosoftAppId` / `MicrosoftAppPassword` / `MicrosoftAppTenantId` / `MicrosoftAppType` in `local.settings.json` with the values from Key Vault (other existing keys are preserved).
 
 ```bash
 make generate-local-settings
