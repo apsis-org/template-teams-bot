@@ -1,21 +1,21 @@
 import { MessageFactory, TurnContext, TeamsActivityHandler, CardFactory } from "botbuilder";
 
 /**
- * TeamsBot - Microsoft Teams Bot のメインクラス
+ * TeamsBot - main class of the Microsoft Teams bot
  *
- * TeamsActivityHandler を継承し、Teams 固有のイベントを処理します。
- * 汎用ボットとして利用する場合は ActivityHandler に変更してください。
+ * Extends TeamsActivityHandler to handle Teams-specific events.
+ * Switch to ActivityHandler if you want a channel-agnostic bot.
  */
 export class TeamsBot extends TeamsActivityHandler {
   constructor() {
     super();
 
-    // メッセージを受信したときの処理
+    // Handle incoming messages
     this.onMessage(async (context: TurnContext, next) => {
       if (context.activity.conversation.conversationType === "personal") {
         await context.sendActivity(
           MessageFactory.text(
-            "このBotは個人チャットではご利用いただけません。チームのチャネルまたはグループチャットに追加してご利用ください。",
+            "This bot is not available in personal chats. Please add it to a team channel or a group chat.",
           ),
         );
         await next();
@@ -29,18 +29,16 @@ export class TeamsBot extends TeamsActivityHandler {
       if (text.toLowerCase() === "help" || text === "ヘルプ") {
         await this.sendHelpCard(context);
       } else if (text.toLowerCase() === "hello" || text === "こんにちは") {
-        await context.sendActivity(
-          MessageFactory.text(`こんにちは、${context.activity.from.name} さん！`),
-        );
+        await context.sendActivity(MessageFactory.text(`Hello, ${context.activity.from.name}!`));
       } else {
-        // デフォルト応答: エコーバック
-        await context.sendActivity(MessageFactory.text(`受け取ったメッセージ: "${text}"`));
+        // Default reply: echo back
+        await context.sendActivity(MessageFactory.text(`Received message: "${text}"`));
       }
 
       await next();
     });
 
-    // メンバーが会話に追加されたときの処理
+    // Handle members being added to the conversation
     this.onMembersAdded(async (context: TurnContext, next) => {
       if (context.activity.conversation.conversationType === "personal") {
         await next();
@@ -52,11 +50,9 @@ export class TeamsBot extends TeamsActivityHandler {
       for (const member of membersAdded) {
         if (member.id !== context.activity.recipient.id) {
           try {
-            const name = member.name ?? "ゲスト";
+            const name = member.name ?? "there";
             await context.sendActivity(
-              MessageFactory.text(
-                `ようこそ、${name} さん！\n\n「help」または「ヘルプ」と入力すると使い方を確認できます。`,
-              ),
+              MessageFactory.text(`Welcome, ${name}!\n\nType "help" to see how to use this bot.`),
             );
           } catch (error) {
             console.warn("Failed to send welcome message:", (error as Error).message);
@@ -77,18 +73,18 @@ export class TeamsBot extends TeamsActivityHandler {
           type: "TextBlock",
           size: "Medium",
           weight: "Bolder",
-          text: "Teams Bot ヘルプ",
+          text: "Teams Bot Help",
         },
         {
           type: "TextBlock",
-          text: "以下のコマンドが使用できます：",
+          text: "The following commands are available:",
           wrap: true,
         },
         {
           type: "FactSet",
           facts: [
-            { title: "hello / こんにちは", value: "挨拶に応答します" },
-            { title: "help / ヘルプ", value: "このヘルプカードを表示します" },
+            { title: "hello / こんにちは", value: "Replies with a greeting" },
+            { title: "help / ヘルプ", value: "Shows this help card" },
           ],
         },
       ],

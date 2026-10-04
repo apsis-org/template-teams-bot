@@ -26,5 +26,5 @@ adapter.onTurnError = async (context: TurnContext, error: Error) => {
     "TurnError",
   );
 
-  await context.sendActivity("エラーが発生しました。しばらくしてから再試行してください。");
+  await context.sendActivity("Something went wrong. Please try again later.");
 };

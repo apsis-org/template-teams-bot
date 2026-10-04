@@ -3,8 +3,8 @@ import { describe, expect, it } from "vitest";
 import { TeamsBot } from "./bot";
 
 /**
- * TestAdapter でボットにメッセージを送り、応答を検証する。
- * template を渡すと、送信する全アクティビティにその値が上書きマージされる。
+ * Sends messages to the bot through TestAdapter and asserts the replies.
+ * When a template is given, it is merged into every activity that is sent.
  */
 const createAdapter = (template?: ConstructorParameters<typeof TestAdapter>[1]) => {
   const bot = new TeamsBot();
@@ -12,11 +12,11 @@ const createAdapter = (template?: ConstructorParameters<typeof TestAdapter>[1]) 
 };
 
 describe("TeamsBot", () => {
-  it("hello に送信者名入りの挨拶を返す", async () => {
-    await createAdapter().send("hello").assertReply("こんにちは、User1 さん！");
+  it("replies to hello with a greeting that includes the sender name", async () => {
+    await createAdapter().send("hello").assertReply("Hello, User1!");
   });
 
-  it("help でヘルプカードを返す", async () => {
+  it("replies to help with a help card", async () => {
     await createAdapter()
       .send("ヘルプ")
       .assertReply((activity) => {
@@ -24,11 +24,11 @@ describe("TeamsBot", () => {
       });
   });
 
-  it("未知のメッセージはエコーバックする", async () => {
-    await createAdapter().send("foo").assertReply('受け取ったメッセージ: "foo"');
+  it("echoes back unknown messages", async () => {
+    await createAdapter().send("foo").assertReply('Received message: "foo"');
   });
 
-  it("個人チャットでは案内メッセージだけを返す", async () => {
+  it("replies only with guidance in personal chats", async () => {
     await createAdapter({
       conversation: {
         id: "personal-1",
@@ -39,7 +39,7 @@ describe("TeamsBot", () => {
     })
       .send("hello")
       .assertReply(
-        "このBotは個人チャットではご利用いただけません。チームのチャネルまたはグループチャットに追加してご利用ください。",
+        "This bot is not available in personal chats. Please add it to a team channel or a group chat.",
       );
   });
 });
