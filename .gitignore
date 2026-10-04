@@ -4,7 +4,7 @@ node_modules/
 # Build output
 dist/
 
-# Azure Functions local settings（機密情報を含むため必ずignore）
+# Azure Functions local settings (contains secrets, must stay ignored)
 local.settings.json
 
 # Environment variables

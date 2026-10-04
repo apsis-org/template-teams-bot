@@ -1,7 +1,7 @@
-# stg/prod 共通の設定ファイル
-# cp terraform.tfvars.example terraform.tfvars して値を編集してください
-# 各環境ディレクトリからシンボリックリンクで自動的に参照されます
+# Settings shared by stg and prod
+# cp terraform.tfvars.example terraform.tfvars and edit the values
+# Each environment directory references this file through a symbolic link
 
-project_name          = "myteamsbot" # 小文字英数字とハイフン、3〜20文字
+project_name          = "myteamsbot" # lowercase letters, digits, hyphens; 3-20 characters
 subscription_id       = "00000000-0000-0000-0000-000000000000"
-shared_key_vault_name = "kv-<組織名>-gh-actions" # 組織共通 Key Vault 名（sp-github-actions の情報を保管）
+shared_key_vault_name = "kv-<org>-gh-actions" # organization-wide Key Vault holding the sp-github-actions credentials

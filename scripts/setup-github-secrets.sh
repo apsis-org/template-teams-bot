@@ -1,27 +1,27 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# GitHub Actions で使用する Secrets / Variables を登録するスクリプト
-# 前提: az login 済み（sp-github-actions のクライアントシークレット取得済み）、gh auth login 済み、terraform apply 済み
-# 使い方: make setup-secrets
+# Registers the Secrets / Variables used by GitHub Actions
+# Prerequisites: az login done (with access to the sp-github-actions client secret), gh auth login done, terraform apply done
+# Usage: make setup-secrets
 
 TFVARS_FILE="infra/envs/terraform.tfvars"
 
-# --- 対話入力 ---
-echo "GitHub Actions のデプロイ設定を行う環境を選択してください。"
-echo "  stg  : ステージング環境（動作確認用）"
-echo "  prod : 本番環境"
+# --- Interactive input ---
+echo "Choose the environment to configure GitHub Actions deployment for."
+echo "  stg  : staging (for verification)"
+echo "  prod : production"
 echo ""
-read -rp "環境を入力してください（デフォルト: stg）: " ENV
+read -rp "Environment (default: stg): " ENV
 ENV="${ENV:-stg}"
 
 echo ""
 echo "=== GitHub Environment: ${ENV} ==="
 echo ""
 
-# --- terraform.tfvars から値を取得 ---
+# --- Read values from terraform.tfvars ---
 if [[ ! -f "$TFVARS_FILE" ]]; then
-  echo "エラー: ${TFVARS_FILE} が見つかりません。先に作成してください" >&2
+  echo "Error: ${TFVARS_FILE} not found. Create it first" >&2
   exit 1
 fi
 
@@ -33,15 +33,15 @@ echo "  Function App: ${FUNCTION_APP_NAME}"
 echo "  Resource Group: ${RESOURCE_GROUP}"
 echo ""
 
-# --- 組織共通 Key Vault から sp-github-actions の情報を取得 ---
+# --- Fetch the sp-github-actions credentials from the organization-wide Key Vault ---
 SHARED_VAULT_NAME="$(grep "^shared_key_vault_name" "$TFVARS_FILE" | sed 's/.*= *"\([^"]*\)".*/\1/')"
 
 if [[ -z "$SHARED_VAULT_NAME" ]]; then
-  echo "エラー: terraform.tfvars に shared_key_vault_name が設定されていません" >&2
+  echo "Error: shared_key_vault_name is not set in terraform.tfvars" >&2
   exit 1
 fi
 
-echo "--- Key Vault (${SHARED_VAULT_NAME}) から認証情報を取得中... ---"
+echo "--- Fetching credentials from Key Vault (${SHARED_VAULT_NAME})... ---"
 CLIENT_ID="$(az keyvault secret show --vault-name "$SHARED_VAULT_NAME" --name sp-github-actions-client-id --query value -o tsv)"
 CLIENT_SECRET="$(az keyvault secret show --vault-name "$SHARED_VAULT_NAME" --name sp-github-actions-client-secret --query value -o tsv)"
 TENANT_ID="$(az account show --query tenantId -o tsv)"
@@ -57,14 +57,14 @@ AZURE_CREDENTIALS=$(cat <<EOF
 EOF
 )
 
-# --- GitHub Environment を用意（存在しなければ作成、存在すれば no-op）---
+# --- Ensure the GitHub Environment exists (created if missing, no-op otherwise) ---
 echo ""
-echo "--- GitHub Environment '${ENV}' を用意中... ---"
+echo "--- Preparing GitHub Environment '${ENV}'... ---"
 gh api --method PUT "repos/{owner}/{repo}/environments/${ENV}" > /dev/null
 
-# --- GitHub に登録 ---
+# --- Register in GitHub ---
 echo ""
-echo "--- GitHub に登録中... ---"
+echo "--- Registering in GitHub... ---"
 
 MICROSOFT_APP_ID="$(cd "infra/envs/${ENV}" && terraform output -raw microsoft_app_id)"
 
@@ -73,28 +73,28 @@ gh variable set AZURE_FUNCTION_APP_NAME --env "$ENV" --body "$FUNCTION_APP_NAME"
 gh variable set AZURE_RESOURCE_GROUP --env "$ENV" --body "$RESOURCE_GROUP"
 gh variable set MICROSOFT_APP_ID --env "$ENV" --body "$MICROSOFT_APP_ID"
 
-# --- 環境別ランタイム値の登録（Function App の App Settings に流れる値）---
-# 対象キーは .env.example に列挙されたものだけ（キー一覧の Single Source of Truth）。
-# 値は .env.${ENV} から読み込み、GitHub Environment Secret に登録する。
-# デプロイ時に deploy-functions.yml が同じキー一覧を使って Function App の App Settings に反映する。
+# --- Register per-environment runtime values (applied to the Function App's App Settings) ---
+# Only the keys listed in .env.example are considered (single source of truth for the key list).
+# Values are read from .env.${ENV} and registered as GitHub Environment Secrets.
+# At deploy time, deploy-functions.yml uses the same key list to apply them to the Function App.
 ENV_EXAMPLE_FILE=".env.example"
 ENV_FILE=".env.${ENV}"
 
-# .env.example から KEY=... 形式の行のキー名だけを抽出（コメント・空行は除外）
+# Extract key names from lines of the form KEY=... in .env.example (comments and blank lines are ignored)
 RUNTIME_KEYS="$(grep -oE '^[A-Za-z_][A-Za-z0-9_]*=' "$ENV_EXAMPLE_FILE" | tr -d '=' || true)"
 
 if [[ -z "$RUNTIME_KEYS" ]]; then
   echo ""
-  echo "--- ランタイム設定: ${ENV_EXAMPLE_FILE} にキーが定義されていないためスキップします ---"
+  echo "--- Runtime settings: no keys defined in ${ENV_EXAMPLE_FILE}, skipping ---"
 elif [[ ! -f "$ENV_FILE" ]]; then
   echo ""
-  echo "警告: ${ENV_FILE} が見つからないため、ランタイム値の登録をスキップします" >&2
-  echo "  cp ${ENV_EXAMPLE_FILE} ${ENV_FILE} して値を設定後、再度このスクリプトを実行してください" >&2
+  echo "Warning: ${ENV_FILE} not found, skipping runtime settings" >&2
+  echo "  Run: cp ${ENV_EXAMPLE_FILE} ${ENV_FILE}, fill in the values, then run this script again" >&2
 else
   echo ""
-  echo "--- ランタイム設定の登録（${ENV_FILE} → Environment: ${ENV}）---"
+  echo "--- Registering runtime settings (${ENV_FILE} → Environment: ${ENV}) ---"
 
-  # サブシェル内で .env.${ENV} を source し、.env.example にあるキーだけ gh に登録する
+  # Source .env.${ENV} in a subshell and register only the keys present in .env.example
   (
     set -a
     # shellcheck disable=SC1090
@@ -107,11 +107,11 @@ else
         gh secret set "$name" --env "$ENV" --body "$value"
         echo "  ✓ ${name}"
       else
-        echo "  - ${name} （空のためスキップ）"
+        echo "  - ${name} (skipped: empty)"
       fi
     done
   )
 fi
 
 echo ""
-echo "=== ${ENV} 環境のセットアップが完了しました ==="
+echo "=== Setup for the ${ENV} environment is complete ==="

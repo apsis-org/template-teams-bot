@@ -1,17 +1,17 @@
 .PHONY: setup-manifest build-package setup-secrets generate-local-settings
 
-## Teams アプリのボット名等を設定（初回のみ）
+## Set the bot name etc. in the Teams app manifest (first time only)
 setup-manifest:
 	./scripts/setup-manifest.sh
 
-## Teams アプリパッケージ（ZIP）を生成
+## Build the Teams app package (ZIP)
 build-package:
 	./scripts/build-package.sh
 
-## GitHub Actions の Secrets / Variables を登録
+## Register GitHub Actions Secrets / Variables
 setup-secrets:
 	./scripts/setup-github-secrets.sh
 
-## Key Vault からローカル設定ファイルを生成
+## Generate the local settings file from Key Vault
 generate-local-settings:
 	./scripts/generate-local-settings.sh

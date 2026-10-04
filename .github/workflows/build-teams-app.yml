@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: "対象環境"
+        description: "Target environment"
         required: true
         default: "stg"
         type: choice

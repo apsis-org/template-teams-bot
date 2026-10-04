@@ -1,11 +1,11 @@
 #!/bin/sh
-# manifest.json がステージされている場合、コミットメッセージの prefix に応じてバージョンを自動インクリメントする。
-# Conventional Commits に準拠して判定する（type の判定はメッセージ1行目のみ）。
-# feat!: / fix(scope)!: など ! 付き、本文の BREAKING CHANGE:、major: / BREAKING: → メジャー (1.0.0 → 2.0.0)
-# feat: / feat(scope): / feature:                                            → マイナー (1.0.0 → 1.1.0)
-# それ以外                                                                    → パッチ  (1.0.0 → 1.0.1)
-# この version は Teams アプリのバージョン。テンプレート本体のバージョン（release-please 管理）とは別物。
-# ただし、ステージされたバージョンが HEAD と異なる場合（手動更新済み）はスキップする。
+# When manifest.json is staged, bump its version automatically based on the commit message prefix.
+# Follows Conventional Commits (the type is read from the first line only).
+# feat!: / fix(scope)!: and other !-suffixed types, BREAKING CHANGE: in the body, major: / BREAKING: → major (1.0.0 → 2.0.0)
+# feat: / feat(scope): / feature:                                                                → minor (1.0.0 → 1.1.0)
+# anything else                                                                                  → patch (1.0.0 → 1.0.1)
+# This version is the Teams app version, independent of the template version (managed by release-please).
+# If the staged version already differs from HEAD (changed by hand), the bump is skipped.
 
 MANIFEST="appPackage/manifest.json"
 
@@ -15,23 +15,23 @@ fi
 
 MSG=$(cat "$1")
 
-# HEAD のバージョンを取得（初回コミット時は空）
+# Version at HEAD (empty on the very first commit)
 HEAD_VERSION=$(git show HEAD:"${MANIFEST}" 2>/dev/null | node -e "
   let d=''; process.stdin.on('data',c=>d+=c).on('end',()=>{
     try { process.stdout.write(JSON.parse(d).version); } catch { process.stdout.write(''); }
   });
 ")
 
-# ステージされたバージョンを取得
+# Staged version
 STAGED_VERSION=$(git show :"${MANIFEST}" | node -e "
   let d=''; process.stdin.on('data',c=>d+=c).on('end',()=>{
     process.stdout.write(JSON.parse(d).version);
   });
 ")
 
-# 手動でバージョンが変更済みならスキップ
+# Skip if the version was changed by hand
 if [ -n "${HEAD_VERSION}" ] && [ "${STAGED_VERSION}" != "${HEAD_VERSION}" ]; then
-  echo "manifest.json version: ${STAGED_VERSION} (手動設定のため自動インクリメントをスキップ)"
+  echo "manifest.json version: ${STAGED_VERSION} (set manually, skipping automatic bump)"
   exit 0
 fi
 
