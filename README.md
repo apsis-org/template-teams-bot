@@ -75,7 +75,7 @@ src/bot/
 ## Prerequisites
 
 - [Node.js 24](https://nodejs.org/)
-- [pnpm 9+](https://pnpm.io/installation)
+- [pnpm 12+](https://pnpm.io/installation)
 - [Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli)
 - [tfenv](https://github.com/tfutils/tfenv) (Terraform version manager)
 - [Azure Functions Core Tools v4](https://learn.microsoft.com/en-us/azure/azure-functions/functions-run-local)
