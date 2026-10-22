@@ -30,29 +30,5 @@
   "engines": {
     "node": "24"
   },
-  "packageManager": "pnpm@9.15.0",
-  "pnpm": {
-    "overrides": {
-      "axios": "^1.20.0",
-      "follow-redirects": "^1.16.0",
-      "form-data": "^4.0.6",
-      "ws@^7.0.0": "^7.5.11",
-      "ws@^8.0.0": "^8.21.0",
-      "uuid@<11.1.1": "^11.1.1",
-      "postcss": "^8.5.23",
-      "nanoid@^3.0.0": "^3.3.18",
-      "vite@*": "npm:@voidzero-dev/vite-plus-core@1.0.0",
-      "vitest@*": "5.0.1"
-    },
-    "peerDependencyRules": {
-      "allowAny": [
-        "vite",
-        "vitest"
-      ],
-      "allowedVersions": {
-        "vite": "*",
-        "vitest": "*"
-      }
-    }
-  }
+  "packageManager": "pnpm@12.15.0"
 }
