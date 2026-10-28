@@ -283,29 +283,11 @@ ZIP 内に `manifest.json` が存在しないか、ファイル名が異なっ�
 
 英字コマンド（`hello` / `help`）は大文字・小文字を区別しません。ボットの応答文は英語です。日本語のコマンド別名（`こんにちは` / `ヘルプ`）はローカライズの例として残しているため、不要であれば削除してください。
 
-## バージョンとリリース
-
-テンプレート本体のバージョンは [release-please](https://github.com/googleapis/release-please) で管理しています。変更内容は [Releases](https://github.com/apsis-org/template-teams-bot/releases) と `CHANGELOG.md` を参照してください。
-
-- バージョンは [Conventional Commits](https://www.conventionalcommits.org/ja/v1.0.0/) から決まります（`feat` → minor、`fix` → patch、`feat!` / `BREAKING CHANGE` → major）
-- テンプレートから作成したリポジトリには、以降の更新は自動で反映されません。必要な変更は CHANGELOG を見て各自で取り込んでください
-- テンプレート本体のバージョン（タグ・`package.json`）と、Teams アプリのバージョン（`appPackage/manifest.json` の `version`。[git フックで自動更新](#manifestjson-のバージョン自動更新)）は別物です
-
-### テンプレートから作成したリポジトリでの扱い
-
-`.github/workflows/release.yml` はテンプレート本体（`apsis-org/template-teams-bot`）でのみ動作するよう制限しています。作成したリポジトリでは実行されないため、不要であれば以下を削除してください。
-
-- `.github/workflows/release.yml`
-- `release-please-config.json`
-- `.release-please-manifest.json`
-- `CHANGELOG.md`
-- `SECURITY.md` / `.github/ISSUE_TEMPLATE/`（テンプレート本体向けの内容のため、自分のプロジェクトに合わせて書き換えるか削除）
-
 ## コントリビューション
 
-- **Issue**: バグ報告・機能要望を歓迎します。[Issue テンプレート](https://github.com/apsis-org/template-teams-bot/issues/new/choose) から作成してください
+- **Issue**: バグ報告・機能要望を歓迎します。[Issues](https://github.com/apsis-org/template-teams-bot/issues) から作成してください
 - **Pull Request**: 現在は受け付けていません。改善提案は Issue でお知らせください
-- **脆弱性**: 公開 Issue ではなく [SECURITY.md](SECURITY.md) の手順で非公開で報告してください
+- **脆弱性**: 公開 Issue ではなく、[Security タブ](https://github.com/apsis-org/template-teams-bot/security)の **Report a vulnerability** から非公開で報告してください
 
 ## ライセンス
 

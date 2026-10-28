@@ -1,5 +1,0 @@
-blank_issues_enabled: false
-contact_links:
-  - name: Report a vulnerability
-    url: https://github.com/apsis-org/template-teams-bot/security/advisories/new
-    about: Please report security issues privately here instead of opening a public issue.

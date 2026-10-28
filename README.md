@@ -283,29 +283,11 @@ The lack of personal-chat support is enforced twice: by `scopes` in `appPackage/
 
 The English commands (`hello` / `help`) are case-insensitive. The Japanese aliases are kept as an example of localized commands; remove them if you do not need them.
 
-## Versioning and releases
-
-The template itself is versioned with [release-please](https://github.com/googleapis/release-please). See [Releases](https://github.com/apsis-org/template-teams-bot/releases) and `CHANGELOG.md` for changes.
-
-- Versions are derived from [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) (`feat` → minor, `fix` → patch, `feat!` / `BREAKING CHANGE` → major)
-- Repositories created from this template do not receive updates automatically. Check the CHANGELOG and pull in the changes you need
-- The template version (tags, `package.json`) and the Teams app version (`version` in `appPackage/manifest.json`, [bumped by the git hook](#automatic-version-bump-of-manifestjson)) are independent
-
-### In repositories created from this template
-
-`.github/workflows/release.yml` is restricted to run only in the template itself (`apsis-org/template-teams-bot`). It will not run in your repository, so delete the following if you do not need them.
-
-- `.github/workflows/release.yml`
-- `release-please-config.json`
-- `.release-please-manifest.json`
-- `CHANGELOG.md`
-- `SECURITY.md` / `.github/ISSUE_TEMPLATE/` (written for the template itself; rewrite for your project or delete)
-
 ## Contributing
 
-- **Issues**: bug reports and feature requests are welcome. Please use the [issue templates](https://github.com/apsis-org/template-teams-bot/issues/new/choose)
+- **Issues**: bug reports and feature requests are welcome. Please open them in [Issues](https://github.com/apsis-org/template-teams-bot/issues)
 - **Pull requests**: not accepted at the moment. Please open an issue for improvement proposals
-- **Vulnerabilities**: do not open a public issue. Follow the private reporting procedure in [SECURITY.md](SECURITY.md)
+- **Vulnerabilities**: do not open a public issue. Report them privately via **Report a vulnerability** in the [Security tab](https://github.com/apsis-org/template-teams-bot/security)
 
 ## License
 
