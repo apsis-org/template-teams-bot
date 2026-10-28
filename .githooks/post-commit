@@ -1,22 +1,23 @@
 #!/bin/sh
-# Fold the manifest.json version bump made by the commit-msg hook into the commit just created.
-# commit-msg runs after git has snapshotted the index, so its `git add` lands in the index but not
-# in the commit. If the only staged change is manifest.json, amend it into HEAD.
+# Fold the manifest.json / package.json version bump made by the commit-msg hook into the commit
+# just created. commit-msg runs after git has snapshotted the index, so its index update lands in the
+# index but not in the commit. If the only staged changes are those two files, amend them into HEAD.
 # --no-verify skips the commit-msg hook so the version is not bumped a second time.
 # This hook runs again after the amend, but by then nothing is staged, so it exits immediately.
 
 MANIFEST="appPackage/manifest.json"
+PACKAGE="package.json"
 
-# Nothing staged for the manifest → nothing to do
-if git diff --cached --quiet -- "${MANIFEST}"; then
+# Nothing staged for the version files → nothing to do
+if git diff --cached --quiet -- "${MANIFEST}" "${PACKAGE}"; then
   exit 0
 fi
 
-# Something other than the manifest is staged (e.g. a partial commit) → leave it to the user
-if git diff --cached --name-only | grep -qv "^${MANIFEST}$"; then
-  echo "manifest.json version bump is staged but other files are staged too; commit it yourself"
+# Something else is staged (e.g. a partial commit) → leave it to the user
+if git diff --cached --name-only | grep -qvE "^(${MANIFEST}|${PACKAGE})$"; then
+  echo "version bump is staged but other files are staged too; commit it yourself"
   exit 0
 fi
 
 git commit --amend --no-edit --no-verify --quiet
-echo "manifest.json version bump folded into $(git rev-parse --short HEAD)"
+echo "version bump folded into $(git rev-parse --short HEAD)"

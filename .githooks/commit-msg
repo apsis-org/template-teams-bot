@@ -1,17 +1,45 @@
 #!/bin/sh
 # When manifest.json is staged, bump its version automatically based on the commit message prefix.
+# The same version is written to package.json so the two always stay in sync.
 # Follows Conventional Commits (the type is read from the first line only).
 # feat!: / fix(scope)!: and other !-suffixed types, BREAKING CHANGE: in the body, major: / BREAKING: → major (1.0.0 → 2.0.0)
 # feat: / feat(scope): / feature:                                                                → minor (1.0.0 → 1.1.0)
 # anything else                                                                                  → patch (1.0.0 → 1.0.1)
-# This version is the Teams app version, independent of the template version (managed by release-please).
-# If the staged version already differs from HEAD (changed by hand), the bump is skipped.
+# If the staged version already differs from HEAD (changed by hand), the bump is skipped and
+# package.json is synced to that version instead.
 #
 # Note: by the time commit-msg runs, git has already snapshotted the index for the commit, so the
-# `git add` below does not reach the commit being created. The post-commit hook folds the staged
+# index update below does not reach the commit being created. The post-commit hook folds the staged
 # bump into that commit with `git commit --amend`.
 
 MANIFEST="appPackage/manifest.json"
+PACKAGE="package.json"
+
+# Replace only the first "version" line (the top-level one) so the file keeps its formatting
+# (re-serializing with JSON.stringify would expand arrays and break the formatter check).
+# The staged blob and the working-tree file are rewritten separately, so unrelated unstaged edits
+# are neither swept into the commit nor lost.
+replace_version() {
+  node -e "
+let d=''; process.stdin.on('data',c=>d+=c).on('end',()=>{
+  const re = /\"version\":\s*\"[^\"]*\"/;
+  if (!re.test(d)) { console.error('$1: \"version\" field not found'); process.exit(1); }
+  process.stdout.write(d.replace(re, '\"version\": \"$2\"'));
+});
+"
+}
+
+set_version() {
+  git show :"$1" > "$1.staged.tmp" \
+    && replace_version "$1" "$2" < "$1.staged.tmp" > "$1.new.tmp" \
+    && BLOB=$(git hash-object -w "$1.new.tmp") \
+    && git update-index --cacheinfo "$(git ls-files -s "$1" | cut -d' ' -f1)" "${BLOB}" "$1" \
+    && replace_version "$1" "$2" < "$1" > "$1.new.tmp" \
+    && cat "$1.new.tmp" > "$1"
+  STATUS=$?
+  rm -f "$1.staged.tmp" "$1.new.tmp"
+  [ "${STATUS}" -eq 0 ] || exit 1
+}
 
 if ! git diff --cached --name-only | grep -q "^${MANIFEST}$"; then
   exit 0
@@ -35,7 +63,8 @@ STAGED_VERSION=$(git show :"${MANIFEST}" | node -e "
 
 # Skip if the version was changed by hand
 if [ -n "${HEAD_VERSION}" ] && [ "${STAGED_VERSION}" != "${HEAD_VERSION}" ]; then
-  echo "manifest.json version: ${STAGED_VERSION} (set manually, skipping automatic bump)"
+  set_version "${PACKAGE}" "${STAGED_VERSION}"
+  echo "manifest.json version: ${STAGED_VERSION} (set manually, skipping automatic bump; synced to package.json)"
   exit 0
 fi
 
@@ -60,16 +89,8 @@ else { v[2]++; }
 process.stdout.write(v.join('.'));
 ")
 
-# Replace only the top-level \"version\" line so the file keeps its formatting
-# (re-serializing with JSON.stringify would expand arrays and break the formatter check).
-node -e "
-const fs = require('fs');
-const src = fs.readFileSync('${MANIFEST}', 'utf8');
-const out = src.replace(/\"version\":\s*\"[^\"]*\"/, '\"version\": \"${NEW_VERSION}\"');
-if (out === src) { console.error('manifest.json: \"version\" field not found'); process.exit(1); }
-fs.writeFileSync('${MANIFEST}', out);
-"
+# package.json first: its version line is not validated earlier, so a failure there leaves nothing half-done
+set_version "${PACKAGE}" "${NEW_VERSION}"
+set_version "${MANIFEST}" "${NEW_VERSION}"
 
-git add "${MANIFEST}"
-
-echo "manifest.json version: ${CURRENT} → ${NEW_VERSION} (${BUMP})"
+echo "manifest.json / package.json version: ${CURRENT} → ${NEW_VERSION} (${BUMP})"

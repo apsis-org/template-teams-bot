@@ -127,7 +127,7 @@ This bot supports **team / groupChat only** (no personal chat).
 ### Versioning
 
 - Commit messages follow Conventional Commits. Mark breaking changes with `feat!:` / `fix!:` or `BREAKING CHANGE:` in the body
-- `version` in `appPackage/manifest.json` is the Teams app version. When a commit includes `manifest.json`, `.githooks/commit-msg` bumps it based on the commit message (`!` suffix / `BREAKING CHANGE:` → major, `feat` → minor, otherwise → patch) and `.githooks/post-commit` amends the bump into that commit (commit-msg runs after git has snapshotted the index, so it cannot change the commit content itself). The hooks replace only the `version` line to keep the file's formatting. They are wired up via `core.hooksPath` by the `prepare` script during `pnpm install`
+- `version` in `appPackage/manifest.json` is the Teams app version. When a commit includes `manifest.json`, `.githooks/commit-msg` bumps it based on the commit message (`!` suffix / `BREAKING CHANGE:` → major, `feat` → minor, otherwise → patch), writes the same version to `version` in `package.json` (the two are always kept in sync), and `.githooks/post-commit` amends the bump into that commit (commit-msg runs after git has snapshotted the index, so it cannot change the commit content itself). The hooks replace only the `version` line to keep the file's formatting. They are wired up via `core.hooksPath` by the `prepare` script during `pnpm install`
 
 ## Environment variables
 
