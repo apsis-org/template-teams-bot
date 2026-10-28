@@ -26,3 +26,15 @@ peerDependencyRules:
   allowedVersions:
     vite: "*"
     vitest: "*"
+
+auditConfig:
+  ignoreGhsas:
+    # zod (via botbuilder): fixed only in zod 4, but botbuilder 4.23.3 calls APIs removed in zod 4
+    # (.nonstrict(), single-argument z.record()), so it cannot be overridden.
+    # Remove once botbuilder supports zod >= 4.6.6.
+    - GHSA-mrhx-c7xc-m3w5
+    # @azure/msal-node (via botbuilder > @azure/identity): affects only the auth_code flow
+    # (acquireTokenByCode), which the bot does not use. Fixed only in 7.1.0, two majors above what
+    # @azure/identity accepts (^6.0.0), so it is not overridden.
+    # Remove once @azure/identity accepts @azure/msal-node >= 7.1.0.
+    - GHSA-xcx6-jx8p-x3h5
